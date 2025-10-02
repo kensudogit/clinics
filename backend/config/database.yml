@@ -1,0 +1,39 @@
+# MySQL. Versions 5.5.8 and up are supported.
+#
+#   Install the MySQL driver
+#   gem install mysql2
+#
+# Ensure the MySQL gem is defined in your Gemfile
+#   gem "mysql2"
+#
+default: &default
+  adapter: mysql2
+  encoding: utf8mb4
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  username: <%= ENV.fetch("DB_USERNAME") { "root" } %>
+  password: <%= ENV.fetch("DB_PASSWORD") { "" } %>
+  host: <%= ENV.fetch("DB_HOST") { "localhost" } %>
+  port: <%= ENV.fetch("DB_PORT") { 3306 } %>
+
+development:
+  <<: *default
+  database: clinics_development
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  <<: *default
+  database: clinics_test
+
+production:
+  <<: *default
+  database: <%= ENV.fetch("DB_NAME") { "clinics_production" } %>
+  username: <%= ENV.fetch("DB_USERNAME") %>
+  password: <%= ENV.fetch("DB_PASSWORD") %>
+  host: <%= ENV.fetch("DB_HOST") %>
+  port: <%= ENV.fetch("DB_PORT") { 3306 } %>
+  ssl_mode: :required
+  sslca: <%= ENV.fetch("DB_SSL_CA") %>
+  sslcert: <%= ENV.fetch("DB_SSL_CERT") %>
+  sslkey: <%= ENV.fetch("DB_SSL_KEY") %>
