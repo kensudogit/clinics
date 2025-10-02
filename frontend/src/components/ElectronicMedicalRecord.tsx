@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,23 +6,13 @@ import { z } from 'zod';
 import { 
   FileText, 
   User, 
-  Calendar, 
-  Stethoscope, 
-  Pill, 
-  Activity,
-  Heart,
-  Thermometer,
-  Clipboard,
   Save,
   Edit,
   Lock,
   Download,
   Share,
   Search,
-  Filter,
-  Plus,
-  Eye,
-  AlertTriangle
+  Plus
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -88,8 +78,6 @@ export const ElectronicMedicalRecord: React.FC<ElectronicMedicalRecordProps> = (
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors, isSubmitting }
   } = useForm<MedicalRecordFormData>({
     resolver: zodResolver(medicalRecordSchema),
@@ -158,7 +146,7 @@ export const ElectronicMedicalRecord: React.FC<ElectronicMedicalRecordProps> = (
   };
 
   const handleSign = () => {
-    if (confirm('この診療記録に署名しますか？署名後は修正できません。')) {
+    if (window.confirm('この診療記録に署名しますか？署名後は修正できません。')) {
       signRecordMutation.mutate();
     }
   };

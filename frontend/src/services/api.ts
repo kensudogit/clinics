@@ -305,6 +305,10 @@ class ApiService {
     });
   }
 
+  async getElectronicMedicalRecord(clinicId: string, recordId: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/electronic_medical_records/${recordId}`);
+  }
+
   async signElectronicMedicalRecord(clinicId: string, recordId: string): Promise<any> {
     return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/electronic_medical_records/${recordId}/sign`, {
       method: 'POST',

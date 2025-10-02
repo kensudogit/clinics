@@ -23,7 +23,7 @@ import { cn } from '../lib/utils';
 const questionnaireSchema = z.object({
   symptoms: z.array(z.object({
     type: z.string(),
-    severity: z.enum(['mild', 'moderate', 'severe'] as const),
+    severity: z.enum(['mild', 'moderate', 'severe']),
     duration: z.number(),
     description: z.string(),
   })).min(1, '症状を1つ以上選択してください'),
@@ -32,12 +32,12 @@ const questionnaireSchema = z.object({
   allergies: z.array(z.object({
     substance: z.string(),
     reaction: z.string(),
-    severity: z.enum(['mild', 'moderate', 'severe'] as const),
+    severity: z.enum(['mild', 'moderate', 'severe']),
   })).optional(),
   lifestyle: z.object({
     smoking: z.boolean(),
     alcohol: z.boolean(),
-    exercise: z.enum(['none', 'light', 'moderate', 'intense'] as const),
+    exercise: z.enum(['none', 'light', 'moderate', 'intense']),
     sleep_hours: z.number().min(0).max(24),
   }).optional(),
 });
