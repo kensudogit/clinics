@@ -78,6 +78,7 @@ export const ElectronicMedicalRecord: React.FC<ElectronicMedicalRecordProps> = (
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting }
   } = useForm<MedicalRecordFormData>({
     resolver: zodResolver(medicalRecordSchema),
