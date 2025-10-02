@@ -9,6 +9,7 @@ export interface User {
   status: 'active' | 'inactive' | 'suspended';
   created_at: string;
   updated_at: string;
+  full_name?: string;
 }
 
 export interface Clinic {
@@ -53,6 +54,7 @@ export interface Patient {
   created_at: string;
   updated_at: string;
   user?: User;
+  age?: number;
 }
 
 export interface Appointment {
