@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,6 +19,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { apiService } from '../services/api';
 import { cn } from '../lib/utils';
+import { ClinicsDataManager } from '../lib/localStorage';
+import { calculateAge } from '../lib/utils';
 
 // 電子カルテフォームのスキーマ
 const medicalRecordSchema = z.object({
@@ -46,7 +48,7 @@ const medicalRecordSchema = z.object({
   allergies: z.array(z.object({
     substance: z.string(),
     reaction: z.string(),
-    severity: z.enum(['mild', 'moderate', 'severe']),
+    severity: z.string().refine(val => ['mild', 'moderate', 'severe'].includes(val)),
   })).optional(),
   follow_up_plan: z.string().optional(),
   icd10_codes: z.string().optional(),
@@ -73,16 +75,33 @@ export const ElectronicMedicalRecord: React.FC<ElectronicMedicalRecordProps> = (
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'draft' | 'signed' | 'locked'>('all');
+  const [autoSaveEnabled] = useState(true);
   const queryClient = useQueryClient();
 
   const {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors, isSubmitting }
   } = useForm<MedicalRecordFormData>({
     resolver: zodResolver(medicalRecordSchema),
   });
+
+  // 自動保存機能
+  useEffect(() => {
+    if (autoSaveEnabled && recordId) {
+      const interval = setInterval(() => {
+        const formData = getValues();
+        if (formData && Object.keys(formData).length > 0) {
+          ClinicsDataManager.saveMedicalRecordData(recordId, formData);
+          console.log('診療記録を自動保存しました');
+        }
+      }, 30000); // 30秒ごとに自動保存
+
+      return () => clearInterval(interval);
+    }
+  }, [autoSaveEnabled, recordId, getValues]);
 
   // 患者情報の取得
   const { data: patient } = useQuery({
@@ -110,7 +129,7 @@ export const ElectronicMedicalRecord: React.FC<ElectronicMedicalRecordProps> = (
     mutationFn: (data: MedicalRecordFormData) => 
       apiService.createElectronicMedicalRecord(clinicId, {
         patient_id: patientId!,
-        doctor_id: consultationId ? undefined : undefined, // 実際の実装では現在の医師IDを設定
+        doctor_id: 'doctor-001', // 実際の実装では現在の医師IDを設定
         online_consultation_id: consultationId,
         ...data,
       }),
@@ -139,10 +158,30 @@ export const ElectronicMedicalRecord: React.FC<ElectronicMedicalRecordProps> = (
   });
 
   const onSubmit = (data: MedicalRecordFormData) => {
-    if (recordId) {
-      updateRecordMutation.mutate(data);
-    } else {
-      createRecordMutation.mutate(data);
+    // ローカルストレージに保存
+    const recordData = {
+      ...data,
+      patientId,
+      doctorId: 'doctor-001', // 実際の実装では現在の医師IDを取得
+      clinicId,
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+    
+    ClinicsDataManager.saveMedicalRecordData(recordId || 'new', recordData);
+    
+    // APIにも送信（オフライン対応）
+    try {
+      if (recordId) {
+        updateRecordMutation.mutate(data);
+      } else {
+        createRecordMutation.mutate(data);
+      }
+    } catch (error) {
+      console.error('API送信エラー:', error);
+      console.log('オフライン状態のため、ローカルストレージに保存しました');
+      ClinicsDataManager.markDataAsPending(`medical_record_${recordId || Date.now()}`);
     }
   };
 
@@ -180,7 +219,7 @@ export const ElectronicMedicalRecord: React.FC<ElectronicMedicalRecordProps> = (
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <User className="w-4 h-4" />
                 <span>{patient.user?.full_name}</span>
-                <span>（{patient.age}歳）</span>
+                <span>（{calculateAge(patient.date_of_birth)}歳）</span>
               </div>
             )}
           </div>

@@ -1,25 +1,27 @@
+# Ruby Gemfile
+# Railsアプリケーションの依存関係を定義する
 source "https://rubygems.org"
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
 ruby "3.2.0"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.0.0"
+gem "rails", "~> 7.0.0" # Rails 7.0フレームワーク
 
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
-gem "propshaft"
+gem "propshaft" # アセットパイプライン
 
 # Use mysql as the database for Active Record
-gem "mysql2", "~> 5.0"
+gem "mysql2", "~> 0.5" # MySQLデータベースアダプター
 
 # Use the Puma web server [https://github.com/puma/puma]
-gem "puma", "~> 5.0"
+gem "puma", "~> 5.0" # Webサーバー
 
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
-gem "jbuilder"
+gem "jbuilder" # JSONビルダー
 
 # Use Redis adapter to run Action Cable in production
-gem "redis", "~> 4.0"
+gem "redis", "~> 4.0" # Redisアダプター
 
 # Use Kredis to get higher-level data types in Redis [https://github.com/rails/kredis]
 # gem "kredis"
@@ -28,56 +30,56 @@ gem "redis", "~> 4.0"
 # gem "bcrypt", "~> 3.1.7"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
-gem "tzinfo-data", platforms: %i[ windows jruby ]
+gem "tzinfo-data", platforms: %i[ windows jruby ] # タイムゾーンデータ
 
 # Reduces boot times through caching; required in config/boot.rb
-gem "bootsnap", require: false
+gem "bootsnap", require: false # ブート時間短縮
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin AJAX possible
-gem "rack-cors"
+gem "rack-cors" # CORS対応
 
 # Background job processing
-gem "sidekiq"
+gem "sidekiq" # バックグラウンドジョブ処理
 
 # Authentication
-gem "devise"
-gem "devise-jwt"
+gem "devise" # 認証システム
+gem "devise-jwt" # JWT認証
 
 # API documentation
-gem "rswag"
+gem "rswag" # APIドキュメント生成
 
 # Pagination
-gem "kaminari"
+gem "kaminari" # ページネーション
 
 # Serialization
-gem "active_model_serializers"
+gem "active_model_serializers" # シリアライゼーション
 
 # Environment variables
-gem "dotenv-rails"
+gem "dotenv-rails" # 環境変数管理
 
 # Database optimization
-gem "bullet"
+gem "bullet" # N+1クエリ検出
 
 # Logging
-gem "lograge"
+gem "lograge" # ログ最適化
 
 # Health checks
-gem "health_check"
+gem "health_check" # ヘルスチェック
 
 # Rate limiting
-gem "rack-attack"
+gem "rack-attack" # レート制限
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  gem "debug", platforms: %i[ mri windows ], require: "debug"
+  gem "debug", platforms: %i[ mri windows ], require: "debug" # デバッグツール
 
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
-  gem "brakeman", require: false
+  gem "brakeman", require: false # セキュリティ脆弱性スキャン
 
   # Code quality
-  gem "rubocop", require: false
-  gem "rubocop-rails", require: false
-  gem "rubocop-rspec", require: false
+  gem "rubocop", require: false # コード品質チェック
+  gem "rubocop-rails", require: false # Rails用RuboCop
+  gem "rubocop-rspec", require: false # RSpec用RuboCop
 end
 
 group :development do
@@ -87,7 +89,7 @@ end
 
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
-  gem "capybara"
-  gem "selenium-webdriver"
-  gem "webdrivers"
+  gem "capybara" # システムテスト
+  gem "selenium-webdriver" # Selenium WebDriver
+  gem "webdrivers" # WebDriver管理
 end

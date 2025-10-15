@@ -10,20 +10,28 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 24 100% 50%; /* Orange primary like Dr.JOY */
+    --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
     --muted: 210 40% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 24 100% 50%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 24 100% 50%;
     --radius: 0.5rem;
+    
+    /* Custom CLINICS colors inspired by Dr.JOY */
+    --clinics-orange: 24 100% 50%;
+    --clinics-orange-light: 24 100% 95%;
+    --clinics-blue: 221 83% 53%;
+    --clinics-gray: 215 20% 65%;
+    --clinics-success: 142 76% 36%;
+    --clinics-warning: 38 92% 50%;
   }
 
   .dark {
@@ -33,19 +41,19 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary: 24 100% 50%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 24 100% 50%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --ring: 24 100% 50%;
   }
 }
 
@@ -55,5 +63,347 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Hiragino Sans', 'ヒラギノ角ゴシック', 'Yu Gothic', '游ゴシック', 'Meiryo', 'メイリオ', sans-serif;
+  }
+}
+
+@layer components {
+  /* CLINICS Custom Components - 斬新的デザイン */
+  .clinics-hero {
+    @apply bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 text-white relative overflow-hidden;
+    background-size: 400% 400%;
+    animation: gradientShift 8s ease infinite;
+  }
+
+  .clinics-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(255,255,255,0.1) 100%);
+    animation: shimmer 3s ease-in-out infinite;
+  }
+
+  .clinics-card {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 relative overflow-hidden;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+    backdrop-filter: blur(10px);
+  }
+
+  .clinics-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4);
+    background-size: 200% 100%;
+    animation: gradientMove 3s ease infinite;
+  }
+
+  .clinics-card-orange {
+    @apply bg-gradient-to-br from-orange-50 to-pink-50 border-orange-200 hover:from-orange-100 hover:to-pink-100;
+  }
+
+  .clinics-button-primary {
+    @apply text-white font-semibold px-8 py-4 rounded-2xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6, #06b6d4);
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+  }
+
+  .clinics-button-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+  }
+
+  .clinics-button-primary:hover::before {
+    left: 100%;
+  }
+
+  .clinics-button-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-semibold px-8 py-4 rounded-2xl border-2 border-gray-200 transition-all duration-300 transform hover:scale-105 hover:border-purple-300;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  .clinics-nav-item {
+    @apply px-6 py-3 text-gray-700 hover:text-purple-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 rounded-xl transition-all duration-300 transform hover:scale-105 relative overflow-hidden;
+  }
+
+  .clinics-nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    transition: width 0.3s ease;
+  }
+
+  .clinics-nav-item:hover::before {
+    width: 4px;
+  }
+
+  .clinics-nav-item-active {
+    @apply px-6 py-3 text-purple-600 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl font-semibold relative;
+  }
+
+  .clinics-nav-item-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+  }
+
+  .clinics-stat-card {
+    @apply bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-3 relative overflow-hidden;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+    backdrop-filter: blur(20px);
+  }
+
+  .clinics-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4, #10b981);
+    background-size: 300% 100%;
+    animation: gradientMove 4s ease infinite;
+  }
+
+  .clinics-feature-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
+  }
+
+  .clinics-feature-card {
+    @apply bg-white p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-4 hover:rotate-1 cursor-pointer relative overflow-hidden;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+    backdrop-filter: blur(15px);
+  }
+
+  .clinics-feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .clinics-feature-card:hover::before {
+    opacity: 1;
+  }
+
+  .clinics-feature-icon {
+    @apply w-16 h-16 rounded-2xl flex items-center justify-center mb-6 relative z-10;
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6, #06b6d4);
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+  }
+
+  .clinics-feature-icon svg {
+    @apply w-8 h-8 text-white;
+  }
+
+  /* Status badges */
+  .clinics-status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .clinics-status-active {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .clinics-status-pending {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .clinics-status-completed {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  .clinics-status-cancelled {
+    @apply bg-red-100 text-red-800;
+  }
+
+  /* Form styles */
+  .clinics-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors duration-200;
+  }
+
+  .clinics-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .clinics-form-group {
+    @apply mb-4;
+  }
+
+  /* Header styles */
+  .clinics-header {
+    @apply bg-white shadow-sm border-b border-gray-200;
+  }
+
+  .clinics-logo {
+    @apply w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center;
+  }
+
+  .clinics-logo svg {
+    @apply w-5 h-5 text-white;
+  }
+
+  /* Sidebar styles */
+  .clinics-sidebar {
+    @apply w-64 bg-white shadow-sm min-h-screen border-r border-gray-200;
+  }
+
+  .clinics-sidebar-nav {
+    @apply p-4;
+  }
+
+  .clinics-sidebar-item {
+    @apply w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors mb-2;
+  }
+
+  .clinics-sidebar-item-active {
+    @apply bg-orange-50 text-orange-700 border-r-2 border-orange-500;
+  }
+
+  .clinics-sidebar-item-inactive {
+    @apply text-gray-700 hover:bg-gray-50;
+  }
+
+  .clinics-sidebar-icon {
+    @apply w-5 h-5;
+  }
+
+  .clinics-sidebar-icon-active {
+    @apply text-orange-600;
+  }
+
+  .clinics-sidebar-icon-inactive {
+    @apply text-gray-500;
+  }
+
+  /* Animation classes */
+  .clinics-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .clinics-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  /* Responsive utilities */
+  @media (max-width: 768px) {
+    .clinics-feature-grid {
+      @apply grid-cols-1 gap-4;
+    }
+    
+    .clinics-hero {
+      @apply py-8 px-4;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%) rotateY(-15deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }

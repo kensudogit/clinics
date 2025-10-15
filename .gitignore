@@ -128,3 +128,5 @@ docker-compose*.yml
 # Monitoring
 monitoring/logs/
 monitoring/data/
+
+.vercel

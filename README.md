@@ -1,26 +1,26 @@
-# Clinics Management System
+# クリニック管理システム
 
-A comprehensive clinic management system built with modern technologies.
+現代的な技術スタックで構築された包括的なクリニック管理システム。
 
-## Technology Stack
+## 技術スタック
 
-### Backend
-- **Ruby on Rails** - API framework
-- **Sidekiq** - Background job processing
-- **MySQL** - Primary database
-- **Redis** - Caching and job queue
+### バックエンド
+- **Ruby on Rails** - APIフレームワーク
+- **Sidekiq** - バックグラウンドジョブ処理
+- **MySQL** - プライマリデータベース
+- **Redis** - キャッシュとジョブキュー
 
-### Frontend
-- **React** - UI framework
-- **TypeScript** - Type safety
-- **Radix UI** - Accessible UI components
-- **Tanstack Query** - Data fetching and caching
-- **React Hook Form** - Form management
-- **Zod** - Schema validation
-- **Tailwind CSS** - Styling
-- **Storybook** - Component development
+### フロントエンド
+- **React** - UIフレームワーク
+- **TypeScript** - 型安全性
+- **Radix UI** - アクセシブルなUIコンポーネント
+- **Tanstack Query** - データフェッチングとキャッシュ
+- **React Hook Form** - フォーム管理
+- **Zod** - スキーマバリデーション
+- **Tailwind CSS** - スタイリング
+- **Storybook** - コンポーネント開発
 
-### Infrastructure
+### インフラストラクチャ
 - **Amazon Web Services**
   - ECS (Elastic Container Service)
   - Aurora MySQL
@@ -32,62 +32,62 @@ A comprehensive clinic management system built with modern technologies.
   - BigQuery
 - **MongoDB Atlas**
 
-### Monitoring & Operations
+### 監視・運用
 - **Terraform** - Infrastructure as Code
-- **SendGrid** - Email service
-- **Datadog** - Monitoring and observability
-- **Sentry** - Error tracking
-- **PagerDuty** - Incident management
+- **SendGrid** - メールサービス
+- **Datadog** - 監視とオブザーバビリティ
+- **Sentry** - エラートラッキング
+- **PagerDuty** - インシデント管理
 
-### Development Tools
-- **Cursor** - AI-powered code editor
-- **GitHub** - Version control
-- **GitHub Copilot** - AI pair programming
-- **Slack** - Team communication
-- **Docker** - Containerization
-- **OrbStack** - Docker alternative
-- **MagicPod** - Mobile testing
-- **CircleCI** - Continuous integration
+### 開発ツール
+- **Cursor** - AI搭載コードエディター
+- **GitHub** - バージョン管理
+- **GitHub Copilot** - AIペアプログラミング
+- **Slack** - チームコミュニケーション
+- **Docker** - コンテナ化
+- **OrbStack** - Docker代替
+- **MagicPod** - モバイルテスト
+- **CircleCI** - 継続的インテグレーション
 - **GitHub Actions** - CI/CD
 
-## Project Structure
+## プロジェクト構造
 
 ```
 clinics/
 ├── backend/                 # Ruby on Rails API
 │   ├── app/
-│   │   ├── api/           # API controllers
-│   │   ├── controllers/   # Application controllers
-│   │   ├── models/        # Data models
-│   │   ├── serializers/   # JSON serializers
-│   │   ├── services/      # Business logic
-│   │   └── workers/       # Sidekiq workers
-│   ├── config/            # Configuration files
-│   ├── db/                # Database files
-│   └── Gemfile            # Ruby dependencies
-├── frontend/              # React application
+│   │   ├── api/           # APIコントローラー
+│   │   ├── controllers/   # アプリケーションコントローラー
+│   │   ├── models/        # データモデル
+│   │   ├── serializers/   # JSONシリアライザー
+│   │   ├── services/      # ビジネスロジック
+│   │   └── workers/       # Sidekiqワーカー
+│   ├── config/            # 設定ファイル
+│   ├── db/                # データベースファイル
+│   └── Gemfile            # Ruby依存関係
+├── frontend/              # Reactアプリケーション
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── hooks/         # Custom hooks
-│   │   ├── lib/           # Utilities
-│   │   ├── services/      # API services
-│   │   ├── types/         # TypeScript types
-│   │   └── utils/         # Helper functions
-│   └── package.json       # Node dependencies
-├── infrastructure/        # Terraform configurations
-├── monitoring/           # Monitoring configurations
-└── docs/                # Documentation
+│   │   ├── components/    # Reactコンポーネント
+│   │   ├── hooks/         # カスタムフック
+│   │   ├── lib/           # ユーティリティ
+│   │   ├── services/      # APIサービス
+│   │   ├── types/         # TypeScript型定義
+│   │   └── utils/         # ヘルパー関数
+│   └── package.json       # Node依存関係
+├── infrastructure/        # Terraform設定
+├── monitoring/           # 監視設定
+└── docs/                # ドキュメント
 ```
 
-## Getting Started
+## はじめに
 
-### Prerequisites
+### 前提条件
 - Ruby 3.2.0+
 - Node.js 18+
 - MySQL 8.0+
 - Redis 6.0+
 
-### Backend Setup
+### バックエンドセットアップ
 ```bash
 cd backend
 bundle install
@@ -97,36 +97,36 @@ rails db:seed
 rails server
 ```
 
-### Frontend Setup
+### フロントエンドセットアップ
 ```bash
 cd frontend
 npm install
 npm start
 ```
 
-## Features
+## 機能
 
-- **Clinic Management** - Manage multiple clinics
-- **Doctor Management** - Doctor profiles and specializations
-- **Patient Management** - Patient records and history
-- **Appointment Scheduling** - Book and manage appointments
-- **Medical Records** - Digital medical records
-- **Analytics Dashboard** - Insights and reporting
-- **User Authentication** - Secure access control
-- **Real-time Updates** - Live data synchronization
+- **クリニック管理** - 複数のクリニックを管理
+- **医師管理** - 医師プロフィールと専門分野
+- **患者管理** - 患者記録と履歴
+- **予約スケジューリング** - 予約の予約と管理
+- **診療記録** - デジタル診療記録
+- **分析ダッシュボード** - インサイトとレポート
+- **ユーザー認証** - セキュアなアクセス制御
+- **リアルタイム更新** - ライブデータ同期
 
-## API Documentation
+## APIドキュメント
 
-The API documentation is available at `/api-docs` when running the backend server.
+バックエンドサーバーを実行しているときに、`/api-docs`でAPIドキュメントが利用可能です。
 
-## Contributing
+## 貢献
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+1. リポジトリをフォーク
+2. フィーチャーブランチを作成
+3. 変更を加える
+4. テストを追加
+5. プルリクエストを送信
 
-## License
+## ライセンス
 
-This project is licensed under the MIT License.
+このプロジェクトはMITライセンスの下でライセンスされています。
