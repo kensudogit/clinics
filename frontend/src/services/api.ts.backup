@@ -1,0 +1,346 @@
+import { API_CONFIG, API_ENDPOINTS } from '../lib/constants';
+import {
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  Clinic,
+  CreateClinicRequest,
+  UpdateClinicRequest,
+  Doctor,
+  CreateDoctorRequest,
+  Patient,
+  CreatePatientRequest,
+  Appointment,
+  CreateAppointmentRequest,
+  ElectronicMedicalRecord,
+  CreateMedicalRecordRequest,
+  PaginatedResponse,
+  ApiResponse,
+} from '../types';
+
+class ApiService {
+  private baseURL: string;
+  private token: string | null = null;
+
+  constructor() {
+    this.baseURL = API_CONFIG.BASE_URL;
+    this.token = localStorage.getItem('auth_token');
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  }
+
+  // Auth methods
+  async login(credentials: LoginRequest): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>(
+      API_ENDPOINTS.AUTH.LOGIN,
+      {
+        method: 'POST',
+        body: JSON.stringify(credentials),
+      }
+    );
+    
+    this.setToken(response.token);
+    return response;
+  }
+
+  async register(userData: RegisterRequest): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>(
+      API_ENDPOINTS.AUTH.REGISTER,
+      {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      }
+    );
+    
+    this.setToken(response.token);
+    return response;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await this.request(API_ENDPOINTS.AUTH.LOGOUT, { method: 'POST' });
+    } finally {
+      this.clearToken();
+    }
+  }
+
+  // Clinic methods
+  async getClinics(): Promise<PaginatedResponse<Clinic>> {
+    return this.request<PaginatedResponse<Clinic>>(API_ENDPOINTS.CLINICS.LIST);
+  }
+
+  async getClinic(id: string): Promise<Clinic> {
+    return this.request<Clinic>(API_ENDPOINTS.CLINICS.DETAIL(id));
+  }
+
+  async createClinic(data: CreateClinicRequest): Promise<Clinic> {
+    return this.request<Clinic>(API_ENDPOINTS.CLINICS.CREATE, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateClinic(id: string, data: UpdateClinicRequest): Promise<Clinic> {
+    return this.request<Clinic>(API_ENDPOINTS.CLINICS.UPDATE(id), {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteClinic(id: string): Promise<void> {
+    await this.request(API_ENDPOINTS.CLINICS.DELETE(id), { method: 'DELETE' });
+  }
+
+  // Doctor methods
+  async getDoctors(clinicId: string): Promise<PaginatedResponse<Doctor>> {
+    return this.request<PaginatedResponse<Doctor>>(
+      API_ENDPOINTS.DOCTORS.LIST(clinicId)
+    );
+  }
+
+  async getDoctor(clinicId: string, id: string): Promise<Doctor> {
+    return this.request<Doctor>(API_ENDPOINTS.DOCTORS.DETAIL(clinicId, id));
+  }
+
+  async createDoctor(clinicId: string, data: CreateDoctorRequest): Promise<Doctor> {
+    return this.request<Doctor>(API_ENDPOINTS.DOCTORS.CREATE(clinicId), {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateDoctor(clinicId: string, id: string, data: Partial<CreateDoctorRequest>): Promise<Doctor> {
+    return this.request<Doctor>(API_ENDPOINTS.DOCTORS.UPDATE(clinicId, id), {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteDoctor(clinicId: string, id: string): Promise<void> {
+    await this.request(API_ENDPOINTS.DOCTORS.DELETE(clinicId, id), { method: 'DELETE' });
+  }
+
+  // Patient methods
+  async getPatients(clinicId: string): Promise<PaginatedResponse<Patient>> {
+    return this.request<PaginatedResponse<Patient>>(
+      API_ENDPOINTS.PATIENTS.LIST(clinicId)
+    );
+  }
+
+  async getPatient(clinicId: string, id: string): Promise<Patient> {
+    return this.request<Patient>(API_ENDPOINTS.PATIENTS.DETAIL(clinicId, id));
+  }
+
+  async createPatient(clinicId: string, data: CreatePatientRequest): Promise<Patient> {
+    return this.request<Patient>(API_ENDPOINTS.PATIENTS.CREATE(clinicId), {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePatient(clinicId: string, id: string, data: Partial<CreatePatientRequest>): Promise<Patient> {
+    return this.request<Patient>(API_ENDPOINTS.PATIENTS.UPDATE(clinicId, id), {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePatient(clinicId: string, id: string): Promise<void> {
+    await this.request(API_ENDPOINTS.PATIENTS.DELETE(clinicId, id), { method: 'DELETE' });
+  }
+
+  // Appointment methods
+  async getAppointments(clinicId: string): Promise<PaginatedResponse<Appointment>> {
+    return this.request<PaginatedResponse<Appointment>>(
+      API_ENDPOINTS.APPOINTMENTS.LIST(clinicId)
+    );
+  }
+
+  async getAppointment(clinicId: string, id: string): Promise<Appointment> {
+    return this.request<Appointment>(API_ENDPOINTS.APPOINTMENTS.DETAIL(clinicId, id));
+  }
+
+  async createAppointment(clinicId: string, data: CreateAppointmentRequest): Promise<Appointment> {
+    return this.request<Appointment>(API_ENDPOINTS.APPOINTMENTS.CREATE(clinicId), {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAppointment(clinicId: string, id: string, data: Partial<CreateAppointmentRequest>): Promise<Appointment> {
+    return this.request<Appointment>(API_ENDPOINTS.APPOINTMENTS.UPDATE(clinicId, id), {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAppointment(clinicId: string, id: string): Promise<void> {
+    await this.request(API_ENDPOINTS.APPOINTMENTS.DELETE(clinicId, id), { method: 'DELETE' });
+  }
+
+  // Medical Record methods
+  async getElectronicMedicalRecords(clinicId: string): Promise<PaginatedResponse<ElectronicMedicalRecord>> {
+    return this.request<PaginatedResponse<ElectronicMedicalRecord>>(
+      API_ENDPOINTS.MEDICAL_RECORDS.LIST(clinicId)
+    );
+  }
+
+  async getElectronicMedicalRecord(clinicId: string, recordId: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/electronic_medical_records/${recordId}`);
+  }
+
+  async createElectronicMedicalRecord(clinicId: string, data: CreateElectronicMedicalRecordRequest): Promise<ElectronicMedicalRecord> {
+    return this.request<ElectronicMedicalRecord>(API_ENDPOINTS.MEDICAL_RECORDS.CREATE(clinicId), {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateElectronicMedicalRecord(clinicId: string, id: string, data: Partial<CreateElectronicMedicalRecordRequest>): Promise<ElectronicMedicalRecord> {
+    return this.request<ElectronicMedicalRecord>(API_ENDPOINTS.MEDICAL_RECORDS.UPDATE(clinicId, id), {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteElectronicMedicalRecord(clinicId: string, id: string): Promise<void> {
+    await this.request(API_ENDPOINTS.MEDICAL_RECORDS.DELETE(clinicId, id), { method: 'DELETE' });
+  }
+
+  // Web Booking methods
+  async getAvailability(clinicId: string, doctorId: string, date: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/availability?doctor_id=${doctorId}&date=${date}`);
+  }
+
+  async createWebBooking(clinicId: string, data: any): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/web_bookings`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Web Questionnaire methods
+  async createWebQuestionnaire(clinicId: string, data: any): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/web_questionnaires`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Online Consultation methods
+  async getOnlineConsultation(clinicId: string, consultationId: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/online_consultations/${consultationId}`);
+  }
+
+  async startConsultation(clinicId: string, consultationId: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/online_consultations/${consultationId}/start`, {
+      method: 'POST',
+    });
+  }
+
+  async endConsultation(clinicId: string, consultationId: string, notes: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/online_consultations/${consultationId}/end`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  }
+
+  async recordVitalSigns(clinicId: string, consultationId: string, vitals: any): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/online_consultations/${consultationId}/vital_signs`, {
+      method: 'POST',
+      body: JSON.stringify({ vital_signs: vitals }),
+    });
+  }
+
+  async addPrescription(clinicId: string, consultationId: string, prescription: any): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/online_consultations/${consultationId}/prescription`, {
+      method: 'POST',
+      body: JSON.stringify({ prescription }),
+    });
+  }
+
+  async createElectronicMedicalRecord(clinicId: string, data: any): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/electronic_medical_records`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateElectronicMedicalRecord(clinicId: string, recordId: string, data: any): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/electronic_medical_records/${recordId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async signElectronicMedicalRecord(clinicId: string, recordId: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/electronic_medical_records/${recordId}/sign`, {
+      method: 'POST',
+    });
+  }
+
+  async getPatientMedicalRecords(clinicId: string, patientId: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.CLINICS.DETAIL(clinicId)}/patients/${patientId}/medical_records`);
+  }
+
+  // Analytics methods
+  async getAnalytics(clinicId: string, params: any): Promise<any> {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request<any>(`${API_ENDPOINTS.ANALYTICS.DASHBOARD}?clinic_id=${clinicId}&${queryString}`);
+  }
+
+  async getRealtimeAnalytics(clinicId: string): Promise<any> {
+    return this.request<any>(`${API_ENDPOINTS.ANALYTICS.DASHBOARD}/realtime?clinic_id=${clinicId}`);
+  }
+
+  // Health check
+  async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string }>> {
+    return this.request<ApiResponse<{ status: string; timestamp: string }>>(
+      API_ENDPOINTS.HEALTH
+    );
+  }
+
+  // Token management
+  setToken(token: string): void {
+    this.token = token;
+    localStorage.setItem('auth_token', token);
+  }
+
+  clearToken(): void {
+    this.token = null;
+    localStorage.removeItem('auth_token');
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.token;
+  }
+}
+
+export const apiService = new ApiService();
