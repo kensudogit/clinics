@@ -400,22 +400,30 @@ class ClinicsAPI < Sinatra::Base
   # その他の静的ファイル（manifest.json、favicon.icoなど）
   get '/manifest.json' do
     file_path = File.join(settings.public_folder, 'manifest.json')
+    STDERR.puts "Manifest.json requested: #{request.path}"
+    STDERR.puts "Manifest.json path: #{file_path}"
+    STDERR.puts "Manifest.json exists: #{File.exist?(file_path)}"
     if File.exist?(file_path)
       content_type 'application/manifest+json'
       send_file file_path
     else
+      STDERR.puts "ERROR: manifest.json not found!"
       status 404
-      content_type :json
-      { error: 'Not Found', message: 'manifest.json not found' }.to_json
+      content_type 'application/json'
+      { error: 'Not Found', message: 'manifest.json not found', debug: { file_path: file_path, exists: File.exist?(file_path) } }.to_json
     end
   end
 
   get '/favicon.ico' do
     file_path = File.join(settings.public_folder, 'favicon.ico')
+    STDERR.puts "Favicon.ico requested: #{request.path}"
+    STDERR.puts "Favicon.ico path: #{file_path}"
+    STDERR.puts "Favicon.ico exists: #{File.exist?(file_path)}"
     if File.exist?(file_path)
       content_type 'image/x-icon'
       send_file file_path
     else
+      STDERR.puts "ERROR: favicon.ico not found!"
       status 404
       content_type 'text/plain'
       'Not Found'
