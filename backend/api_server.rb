@@ -255,7 +255,14 @@ class ClinicsAPI < Sinatra::Base
 
   # 静的ファイルの配信（CSS、JS、画像など）
   get '/static/*' do
-    send_file File.join(settings.public_folder, 'static', params[:splat].first)
+    file_path = File.join(settings.public_folder, 'static', params[:splat].first)
+    if File.exist?(file_path)
+      send_file file_path
+    else
+      status 404
+      content_type :json
+      { error: 'Not Found', message: 'Static file not found' }.to_json
+    end
   end
 
   # ルートパス - フロントエンドのindex.htmlを返す
