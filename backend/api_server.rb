@@ -403,53 +403,37 @@ class ClinicsAPI < Sinatra::Base
 
   # SPA用のルーティング - すべてのパスでindex.htmlを返す（APIパスと静的ファイルパス以外）
   # このルーティングは最後に定義する必要がある（APIエンドポイントの後に）
+  # 注意: Sinatraでは、より具体的なルーティング（/static/*など）が先に評価されるため、
+  # このルーティングは/static/*や/manifest.jsonなどにはマッチしないはずです
   get '/*' do
-    # APIパスと静的ファイルパスは既に処理されているので、ここには来ないはず
-    # 念のため、明示的にチェック
-    if request.path.start_with?('/api/') || request.path.start_with?('/static/')
+    STDERR.puts "SPA route (catch-all) requested: #{request.path}"
+    
+    # 念のため、APIパスと静的ファイルパスは既に処理されているはずなので、
+    # ここに来ることはないはずですが、ログを出力して確認
+    if request.path.start_with?('/api/')
+      STDERR.puts "WARNING: API path reached catch-all route: #{request.path}"
       status 404
       content_type :json
       return { error: 'Not Found', message: 'The requested resource was not found' }.to_json
     end
     
-    # manifest.jsonとfavicon.icoも既に処理されている
-    if request.path == '/manifest.json' || request.path == '/favicon.ico'
+    if request.path.start_with?('/static/')
+      STDERR.puts "WARNING: Static path reached catch-all route: #{request.path}"
+      STDERR.puts "This should not happen - /static/* route should have caught this"
       status 404
       content_type :json
-      return { error: 'Not Found', message: 'The requested resource was not found' }.to_json
+      return { error: 'Not Found', message: 'Static file route should have handled this' }.to_json
     end
     
-    file_path = File.join(settings.public_folder, request.path)
-    STDERR.puts "SPA route requested: #{request.path}, file_path: #{file_path}"
-    
-    # 静的ファイルが存在する場合はそれを返す
-    if File.exist?(file_path) && File.file?(file_path)
-      # MIMEタイプを正しく設定
-      ext = File.extname(file_path).downcase
-      content_type case ext
-                   when '.html' then 'text/html'
-                   when '.js' then 'application/javascript'
-                   when '.css' then 'text/css'
-                   when '.png' then 'image/png'
-                   when '.jpg', '.jpeg' then 'image/jpeg'
-                   when '.gif' then 'image/gif'
-                   when '.svg' then 'image/svg+xml'
-                   when '.ico' then 'image/x-icon'
-                   when '.json' then 'application/json'
-                   else 'application/octet-stream'
-                   end
-      send_file file_path
+    # SPA用にindex.htmlを返す
+    index_path = File.join(settings.public_folder, 'index.html')
+    if File.exist?(index_path)
+      content_type 'text/html'
+      send_file index_path
     else
-      # SPA用にindex.htmlを返す
-      index_path = File.join(settings.public_folder, 'index.html')
-      if File.exist?(index_path)
-        content_type 'text/html'
-        send_file index_path
-      else
-        status 404
-        content_type :json
-        { error: 'Not Found', message: "Frontend build not found. Index path: #{index_path}" }.to_json
-      end
+      status 404
+      content_type :json
+      { error: 'Not Found', message: "Frontend build not found. Index path: #{index_path}" }.to_json
     end
   end
 end
