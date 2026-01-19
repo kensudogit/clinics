@@ -54,18 +54,46 @@ RUN echo "Copying frontend build to public directory..." && \
     mkdir -p public && \
     if [ -d "frontend-build/build" ] && [ "$(ls -A frontend-build/build 2>/dev/null)" ]; then \
         echo "Copying from frontend-build/build..." && \
+        echo "Contents of frontend-build/build:" && \
+        ls -la frontend-build/build/ && \
+        echo "Checking for static directory..." && \
+        ls -la frontend-build/build/static/ 2>/dev/null || echo "WARNING: static directory not found in build output" && \
         cp -r frontend-build/build/* ./public/ && \
         echo "Frontend files copied successfully" && \
-        ls -la ./public/; \
+        echo "Contents of public directory:" && \
+        ls -la ./public/ && \
+        echo "Checking for static directory in public:" && \
+        ls -la ./public/static/ 2>/dev/null || echo "WARNING: static directory not found in public" && \
+        if [ -d "./public/static" ]; then \
+            echo "Static directory contents:" && \
+            ls -la ./public/static/ && \
+            if [ -d "./public/static/js" ]; then \
+                echo "JS files:" && \
+                ls -la ./public/static/js/ | head -5; \
+            fi && \
+            if [ -d "./public/static/css" ]; then \
+                echo "CSS files:" && \
+                ls -la ./public/static/css/ | head -5; \
+            fi; \
+        fi; \
     elif [ -d "frontend/build" ] && [ "$(ls -A frontend/build 2>/dev/null)" ]; then \
         echo "Copying from frontend/build..." && \
+        echo "Contents of frontend/build:" && \
+        ls -la frontend/build/ && \
+        echo "Checking for static directory..." && \
+        ls -la frontend/build/static/ 2>/dev/null || echo "WARNING: static directory not found in build output" && \
         cp -r frontend/build/* ./public/ && \
         echo "Frontend files copied successfully" && \
-        ls -la ./public/; \
+        echo "Contents of public directory:" && \
+        ls -la ./public/ && \
+        echo "Checking for static directory in public:" && \
+        ls -la ./public/static/ 2>/dev/null || echo "WARNING: static directory not found in public"; \
     else \
         echo "ERROR: Frontend build not found!" && \
         echo "frontend-build/build exists: $([ -d frontend-build/build ] && echo yes || echo no)" && \
         echo "frontend/build exists: $([ -d frontend/build ] && echo yes || echo no)" && \
+        echo "Checking frontend-build directory structure:" && \
+        ls -la frontend-build/ 2>/dev/null || echo "frontend-build directory does not exist" && \
         exit 1; \
     fi
 
