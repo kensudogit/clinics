@@ -1,0 +1,77 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+DEPLOYMENT.md
+RAILWAY_DEPLOY.md
+RAILWAY_ENV_VARS.md
+
+# Docker
+# Dockerfile is needed for Railway deployment, so we don't ignore it
+.dockerignore
+docker-compose.yml
+
+# Railway
+railway.json
+railway.toml
+
+# Node modules (will be built)
+frontend/node_modules
+frontend/.next
+frontend/.cache
+
+# Build artifacts (will be copied)
+# frontend/build is needed for Docker build, so we explicitly allow it
+!frontend/build
+
+# Logs
+*.log
+log/
+backend/log/
+frontend/log/
+
+# Temporary files
+tmp/
+backend/tmp/
+frontend/tmp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# IDE
+.vscode
+.idea
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test files
+spec/
+test/
+__tests__/
+*.test.*
+*.spec.*
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Misc
+*.bak
+*.backup
+
