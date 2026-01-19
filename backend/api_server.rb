@@ -10,19 +10,46 @@ class ClinicsAPI < Sinatra::Base
     set :bind, '0.0.0.0'
     # 静的ファイルの配信設定
     # api_server.rbは/app/backend/にあるので、/app/publicを指す
-    public_dir = File.expand_path(File.join(File.dirname(__FILE__), '..', 'public'))
+    # まず、相対パスで計算
+    relative_public_dir = File.expand_path(File.join(File.dirname(__FILE__), '..', 'public'))
+    # 絶対パスも試す
+    absolute_public_dir = '/app/public'
+    # 現在の作業ディレクトリからの相対パスも試す
+    cwd_public_dir = File.join(Dir.pwd, 'public')
+    
+    # 存在するパスを選択
+    public_dir = if File.exist?(absolute_public_dir)
+                   absolute_public_dir
+                 elsif File.exist?(relative_public_dir)
+                   relative_public_dir
+                 elsif File.exist?(cwd_public_dir)
+                   cwd_public_dir
+                 else
+                   absolute_public_dir  # デフォルトとして/app/publicを使用
+                 end
+    
     set :public_folder, public_dir
     set :static, true
     # デバッグ用ログ（stderrに出力してRailwayのログで確認可能）
     STDERR.puts "=" * 50
     STDERR.puts "Application starting..."
-    STDERR.puts "Public folder path: #{public_dir}"
-    STDERR.puts "Public folder exists: #{File.exist?(public_dir)}"
-    STDERR.puts "Current working directory: #{Dir.pwd}"
     STDERR.puts "api_server.rb location: #{__FILE__}"
+    STDERR.puts "Current working directory: #{Dir.pwd}"
+    STDERR.puts "Relative public dir: #{relative_public_dir} (exists: #{File.exist?(relative_public_dir)})"
+    STDERR.puts "Absolute public dir: #{absolute_public_dir} (exists: #{File.exist?(absolute_public_dir)})"
+    STDERR.puts "CWD public dir: #{cwd_public_dir} (exists: #{File.exist?(cwd_public_dir)})"
+    STDERR.puts "Selected public folder path: #{public_dir}"
+    STDERR.puts "Public folder exists: #{File.exist?(public_dir)}"
     
     if File.exist?(public_dir)
       STDERR.puts "Public folder contents: #{Dir.entries(public_dir).join(', ')}"
+      static_dir = File.join(public_dir, 'static')
+      if File.exist?(static_dir)
+        STDERR.puts "Static directory exists: #{File.exist?(static_dir)}"
+        STDERR.puts "Static directory contents: #{Dir.entries(static_dir).join(', ')}"
+      else
+        STDERR.puts "WARNING: Static directory does not exist!"
+      end
     else
       STDERR.puts "WARNING: Public folder does not exist!"
     end
@@ -30,15 +57,6 @@ class ClinicsAPI < Sinatra::Base
     index_path = File.join(public_dir, 'index.html')
     STDERR.puts "Index.html path: #{index_path}"
     STDERR.puts "Index.html exists: #{File.exist?(index_path)}"
-    
-    # 代替パスも確認
-    alt_paths = ['/app/public', File.join(Dir.pwd, 'public')]
-    alt_paths.each do |alt|
-      STDERR.puts "Alternative path #{alt} exists: #{File.exist?(alt)}"
-      if File.exist?(alt) && File.exist?(File.join(alt, 'index.html'))
-        STDERR.puts "Found index.html at alternative path: #{File.join(alt, 'index.html')}"
-      end
-    end
     
     STDERR.puts "=" * 50
   end
