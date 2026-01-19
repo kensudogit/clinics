@@ -281,14 +281,27 @@ class ClinicsAPI < Sinatra::Base
   # 静的ファイルの配信（CSS、JS、画像など）
   get '/static/*' do
     file_path = File.join(settings.public_folder, 'static', params[:splat].first)
+    STDERR.puts "=" * 50
     STDERR.puts "Static file requested: #{request.path}"
     STDERR.puts "File path: #{file_path}"
     STDERR.puts "File exists: #{File.exist?(file_path)}"
+    STDERR.puts "Is file: #{File.file?(file_path) if File.exist?(file_path)}"
+    STDERR.puts "Public folder: #{settings.public_folder}"
+    STDERR.puts "Public folder exists: #{File.exist?(settings.public_folder)}"
+    if File.exist?(settings.public_folder)
+      STDERR.puts "Public folder contents: #{Dir.entries(settings.public_folder).join(', ')}"
+      static_dir = File.join(settings.public_folder, 'static')
+      STDERR.puts "Static directory exists: #{File.exist?(static_dir)}"
+      if File.exist?(static_dir)
+        STDERR.puts "Static directory contents: #{Dir.entries(static_dir).join(', ')}"
+      end
+    end
+    STDERR.puts "=" * 50
     
     if File.exist?(file_path) && File.file?(file_path)
       # MIMEタイプを正しく設定
       ext = File.extname(file_path).downcase
-      content_type case ext
+      mime_type = case ext
                    when '.js' then 'application/javascript'
                    when '.css' then 'text/css'
                    when '.png' then 'image/png'
@@ -303,11 +316,14 @@ class ClinicsAPI < Sinatra::Base
                    when '.eot' then 'application/vnd.ms-fontobject'
                    else 'application/octet-stream'
                    end
+      STDERR.puts "Serving file with MIME type: #{mime_type}"
+      content_type mime_type
       send_file file_path
     else
+      STDERR.puts "ERROR: Static file not found!"
       status 404
       content_type :json
-      { error: 'Not Found', message: "Static file not found: #{request.path}" }.to_json
+      { error: 'Not Found', message: "Static file not found: #{request.path}", debug: { file_path: file_path, exists: File.exist?(file_path) } }.to_json
     end
   end
 
