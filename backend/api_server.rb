@@ -269,11 +269,12 @@ class ClinicsAPI < Sinatra::Base
 
   # 静的ファイルの配信（CSS、JS、画像など）
   # 注意: このルーティングはエラーハンドラーの前に定義する必要がある
-  get '/static/*' do
-    file_path = File.join(settings.public_folder, 'static', params[:splat].first)
+  # Sinatraのルーティングでは、より具体的なパターンが先に評価される
+  get %r{^/static/(.+)$} do |path|
+    file_path = File.join(settings.public_folder, 'static', path)
     STDERR.puts "=" * 50
     STDERR.puts "Static file requested: #{request.path}"
-    STDERR.puts "Splat param: #{params[:splat].inspect}"
+    STDERR.puts "Captured path: #{path}"
     STDERR.puts "File path: #{file_path}"
     STDERR.puts "File exists: #{File.exist?(file_path)}"
     STDERR.puts "Is file: #{File.file?(file_path) if File.exist?(file_path)}"
