@@ -8,6 +8,9 @@ class ClinicsAPI < Sinatra::Base
     enable :logging
     set :port, ENV.fetch('PORT', 3000).to_i
     set :bind, '0.0.0.0'
+    # 静的ファイルの配信設定
+    set :public_folder, File.join(File.dirname(__FILE__), '..', 'public')
+    set :static, true
   end
 
   # CORS設定
@@ -21,7 +24,7 @@ class ClinicsAPI < Sinatra::Base
     200
   end
 
-  # ヘルスチェック
+  # APIエンドポイント（先に定義する必要がある）
   get '/api/v1/health' do
     content_type :json
     { status: 'healthy', timestamp: Time.now.iso8601 }.to_json
@@ -243,6 +246,41 @@ class ClinicsAPI < Sinatra::Base
   error 500 do
     content_type :json
     { error: 'Internal Server Error', message: 'Something went wrong' }.to_json
+  end
+
+  # 静的ファイルの配信（CSS、JS、画像など）
+  get '/static/*' do
+    send_file File.join(settings.public_folder, 'static', params[:splat].first)
+  end
+
+  # ルートパス - フロントエンドのindex.htmlを返す
+  get '/' do
+    index_path = File.join(settings.public_folder, 'index.html')
+    if File.exist?(index_path)
+      send_file index_path, type: 'text/html'
+    else
+      status 404
+      { error: 'Not Found', message: 'Frontend build not found. Please build the frontend first.' }.to_json
+    end
+  end
+
+  # SPA用のルーティング - すべてのパスでindex.htmlを返す（APIパス以外）
+  # このルーティングは最後に定義する必要がある（APIエンドポイントの後に）
+  get '/*' do
+    # 静的ファイルが存在する場合はそれを返す
+    file_path = File.join(settings.public_folder, request.path)
+    if File.exist?(file_path) && File.file?(file_path)
+      send_file file_path
+    else
+      # SPA用にindex.htmlを返す
+      index_path = File.join(settings.public_folder, 'index.html')
+      if File.exist?(index_path)
+        send_file index_path, type: 'text/html'
+      else
+        status 404
+        { error: 'Not Found', message: 'Frontend build not found.' }.to_json
+      end
+    end
   end
 end
 
