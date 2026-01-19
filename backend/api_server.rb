@@ -9,13 +9,21 @@ class ClinicsAPI < Sinatra::Base
     set :port, ENV.fetch('PORT', 3000).to_i
     set :bind, '0.0.0.0'
     # 静的ファイルの配信設定
-    public_dir = File.join(File.dirname(__FILE__), '..', 'public')
+    # api_server.rbは/app/backend/にあるので、/app/publicを指す
+    public_dir = File.expand_path(File.join(File.dirname(__FILE__), '..', 'public'))
     set :public_folder, public_dir
     set :static, true
     # デバッグ用ログ
+    puts "=" * 50
     puts "Public folder path: #{public_dir}"
     puts "Public folder exists: #{File.exist?(public_dir)}"
-    puts "Index.html exists: #{File.exist?(File.join(public_dir, 'index.html'))}"
+    if File.exist?(public_dir)
+      puts "Public folder contents: #{Dir.entries(public_dir).join(', ')}"
+    end
+    index_path = File.join(public_dir, 'index.html')
+    puts "Index.html path: #{index_path}"
+    puts "Index.html exists: #{File.exist?(index_path)}"
+    puts "=" * 50
   end
 
   # CORS設定
@@ -268,15 +276,29 @@ class ClinicsAPI < Sinatra::Base
   # ルートパス - フロントエンドのindex.htmlを返す
   get '/' do
     index_path = File.join(settings.public_folder, 'index.html')
-    puts "Root path requested. Index path: #{index_path}"
+    puts "=" * 50
+    puts "Root path requested"
+    puts "Public folder: #{settings.public_folder}"
+    puts "Index path: #{index_path}"
     puts "Index exists: #{File.exist?(index_path)}"
+    if File.exist?(settings.public_folder)
+      puts "Public folder contents: #{Dir.entries(settings.public_folder).join(', ')}"
+    end
+    puts "=" * 50
+    
     if File.exist?(index_path)
       content_type 'text/html'
       send_file index_path
     else
       status 404
       content_type :json
-      { error: 'Not Found', message: "Frontend build not found. Index path: #{index_path}" }.to_json
+      { 
+        error: 'Not Found', 
+        message: "Frontend build not found. Index path: #{index_path}",
+        public_folder: settings.public_folder,
+        public_folder_exists: File.exist?(settings.public_folder),
+        public_folder_contents: File.exist?(settings.public_folder) ? Dir.entries(settings.public_folder).join(', ') : 'N/A'
+      }.to_json
     end
   end
 
