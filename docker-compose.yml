@@ -1,0 +1,86 @@
+# Docker Compose設定ファイル
+# クリニック管理システムの開発・本番環境を定義する
+# Note: version field is deprecated in Docker Compose v2+
+
+services:
+  # MySQLデータベース
+  mysql:
+    image: mysql:8.0
+    container_name: clinics_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword # ルートパスワード
+      MYSQL_DATABASE: clinics_production # データベース名
+      MYSQL_USER: clinics_user # ユーザー名
+      MYSQL_PASSWORD: clinics_password # パスワード
+    ports:
+      - "3306:3306" # ポートマッピング
+    volumes:
+      - mysql_data:/var/lib/mysql # データ永続化
+      - ./backend/db/init:/docker-entrypoint-initdb.d # 初期化スクリプト
+    networks:
+      - clinics_network
+    restart: unless-stopped # 自動再起動
+
+  # Redisキャッシュ
+  redis:
+    image: redis:7-alpine
+    container_name: clinics_redis
+    ports:
+      - "6379:6379" # ポートマッピング
+    volumes:
+      - redis_data:/data # データ永続化
+    networks:
+      - clinics_network
+    restart: unless-stopped # 自動再起動
+
+  # Railsバックエンド
+  backend:
+    build: .
+    container_name: clinics_backend
+    environment:
+      RAILS_ENV: production # 本番環境
+      DB_HOST: mysql # データベースホスト
+      DB_PORT: 3306 # データベースポート
+      DB_USERNAME: clinics_user # データベースユーザー名
+      DB_PASSWORD: clinics_password # データベースパスワード
+      DB_NAME: clinics_production # データベース名
+      REDIS_URL: redis://redis:6379/0 # Redis接続URL
+      JWT_SECRET_KEY: your_secure_jwt_secret_key_for_production # JWT秘密鍵
+      SECRET_KEY_BASE: your_rails_secret_key_base_for_production # Rails秘密鍵
+      RAILS_SERVE_STATIC_FILES: "true" # 静的ファイル配信
+      RAILS_LOG_TO_STDOUT: "true" # ログ出力
+      FORCE_SSL: "false" # SSL強制無効
+    ports:
+      - "3001:3000" # ポートマッピング
+    depends_on:
+      - mysql # MySQL依存
+      - redis # Redis依存
+    networks:
+      - clinics_network
+    restart: unless-stopped # 自動再起動
+    volumes:
+      - ./backend/log:/app/log # ログディレクトリ
+      - ./backend/tmp:/app/tmp # 一時ディレクトリ
+
+  # フロントエンド（Nginxで静的ファイル配信）
+  frontend:
+    image: nginx:alpine
+    container_name: clinics_frontend
+    ports:
+      - "3002:80" # ポートマッピング（3000は既に使用中のため3002に変更）
+    volumes:
+      - ./frontend/build:/usr/share/nginx/html:ro # ビルドファイル（読み取り専用）
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro # Nginx設定（読み取り専用）
+    networks:
+      - clinics_network
+    restart: unless-stopped # 自動再起動
+    depends_on:
+      - backend # バックエンド依存
+
+volumes:
+  mysql_data: # MySQLデータボリューム
+  redis_data: # Redisデータボリューム
+
+networks:
+  clinics_network: # クリニックネットワーク
+    driver: bridge
