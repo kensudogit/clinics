@@ -143,6 +143,32 @@ npm install
 npm start
 ```
 
+## Railwayへのデプロイ
+
+このプロジェクトはRailwayに簡単にデプロイできます。
+
+### クイックスタート
+
+1. [RAILWAY_QUICKSTART.md](./RAILWAY_QUICKSTART.md)を参照して5分でデプロイ
+2. または[RAILWAY_DEPLOY.md](./RAILWAY_DEPLOY.md)で詳細な手順を確認
+
+### デプロイスクリプト
+
+```bash
+# Windows
+deploy-railway.bat
+
+# または手動で
+cd frontend && npm run build && cd ..
+railway login
+railway init
+railway up
+```
+
+### 環境変数
+
+デプロイ前に[RAILWAY_ENV_VARS.md](./RAILWAY_ENV_VARS.md)を参照して環境変数を設定してください。
+
 ## 機能
 
 - **クリニック管理** - 複数のクリニックを管理
@@ -157,6 +183,14 @@ npm start
 ## APIドキュメント
 
 バックエンドサーバーを実行しているときに、`/api-docs`でAPIドキュメントが利用可能です。
+
+### ヘルスチェック
+
+デプロイ後、以下のエンドポイントでヘルスチェックが可能：
+
+```
+GET /api/v1/health
+```
 
 ## 貢献
 

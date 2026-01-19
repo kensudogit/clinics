@@ -33,7 +33,15 @@ production:
   password: <%= ENV.fetch("DB_PASSWORD") %>
   host: <%= ENV.fetch("DB_HOST") %>
   port: <%= ENV.fetch("DB_PORT") { 3306 } %>
+  <% if ENV['DB_SSL_CA'].present? %>
   ssl_mode: :required
   sslca: <%= ENV.fetch("DB_SSL_CA") %>
+  <% if ENV['DB_SSL_CERT'].present? %>
   sslcert: <%= ENV.fetch("DB_SSL_CERT") %>
+  <% end %>
+  <% if ENV['DB_SSL_KEY'].present? %>
   sslkey: <%= ENV.fetch("DB_SSL_KEY") %>
+  <% end %>
+  <% else %>
+  # SSL is optional for Railway MySQL (usually not required)
+  <% end %>
