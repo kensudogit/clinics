@@ -9,8 +9,13 @@ class ClinicsAPI < Sinatra::Base
     set :port, ENV.fetch('PORT', 3000).to_i
     set :bind, '0.0.0.0'
     # 静的ファイルの配信設定
-    set :public_folder, File.join(File.dirname(__FILE__), '..', 'public')
+    public_dir = File.join(File.dirname(__FILE__), '..', 'public')
+    set :public_folder, public_dir
     set :static, true
+    # デバッグ用ログ
+    puts "Public folder path: #{public_dir}"
+    puts "Public folder exists: #{File.exist?(public_dir)}"
+    puts "Index.html exists: #{File.exist?(File.join(public_dir, 'index.html'))}"
   end
 
   # CORS設定
@@ -256,29 +261,38 @@ class ClinicsAPI < Sinatra::Base
   # ルートパス - フロントエンドのindex.htmlを返す
   get '/' do
     index_path = File.join(settings.public_folder, 'index.html')
+    puts "Root path requested. Index path: #{index_path}"
+    puts "Index exists: #{File.exist?(index_path)}"
     if File.exist?(index_path)
-      send_file index_path, type: 'text/html'
+      content_type 'text/html'
+      send_file index_path
     else
       status 404
-      { error: 'Not Found', message: 'Frontend build not found. Please build the frontend first.' }.to_json
+      content_type :json
+      { error: 'Not Found', message: "Frontend build not found. Index path: #{index_path}" }.to_json
     end
   end
 
   # SPA用のルーティング - すべてのパスでindex.htmlを返す（APIパス以外）
   # このルーティングは最後に定義する必要がある（APIエンドポイントの後に）
   get '/*' do
-    # 静的ファイルが存在する場合はそれを返す
+    # APIパスは既に処理されているので、ここには来ない
     file_path = File.join(settings.public_folder, request.path)
+    puts "SPA route requested: #{request.path}, file_path: #{file_path}"
+    
+    # 静的ファイルが存在する場合はそれを返す
     if File.exist?(file_path) && File.file?(file_path)
       send_file file_path
     else
       # SPA用にindex.htmlを返す
       index_path = File.join(settings.public_folder, 'index.html')
       if File.exist?(index_path)
-        send_file index_path, type: 'text/html'
+        content_type 'text/html'
+        send_file index_path
       else
         status 404
-        { error: 'Not Found', message: 'Frontend build not found.' }.to_json
+        content_type :json
+        { error: 'Not Found', message: "Frontend build not found. Index path: #{index_path}" }.to_json
       end
     end
   end
