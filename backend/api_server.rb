@@ -385,10 +385,24 @@ class ClinicsAPI < Sinatra::Base
     end
   end
 
-  # SPA用のルーティング - すべてのパスでindex.htmlを返す（APIパス以外）
+  # SPA用のルーティング - すべてのパスでindex.htmlを返す（APIパスと静的ファイルパス以外）
   # このルーティングは最後に定義する必要がある（APIエンドポイントの後に）
   get '/*' do
-    # APIパスと静的ファイルパスは既に処理されているので、ここには来ない
+    # APIパスと静的ファイルパスは既に処理されているので、ここには来ないはず
+    # 念のため、明示的にチェック
+    if request.path.start_with?('/api/') || request.path.start_with?('/static/')
+      status 404
+      content_type :json
+      return { error: 'Not Found', message: 'The requested resource was not found' }.to_json
+    end
+    
+    # manifest.jsonとfavicon.icoも既に処理されている
+    if request.path == '/manifest.json' || request.path == '/favicon.ico'
+      status 404
+      content_type :json
+      return { error: 'Not Found', message: 'The requested resource was not found' }.to_json
+    end
+    
     file_path = File.join(settings.public_folder, request.path)
     STDERR.puts "SPA route requested: #{request.path}, file_path: #{file_path}"
     
