@@ -13,17 +13,34 @@ class ClinicsAPI < Sinatra::Base
     public_dir = File.expand_path(File.join(File.dirname(__FILE__), '..', 'public'))
     set :public_folder, public_dir
     set :static, true
-    # デバッグ用ログ
-    puts "=" * 50
-    puts "Public folder path: #{public_dir}"
-    puts "Public folder exists: #{File.exist?(public_dir)}"
+    # デバッグ用ログ（stderrに出力してRailwayのログで確認可能）
+    STDERR.puts "=" * 50
+    STDERR.puts "Application starting..."
+    STDERR.puts "Public folder path: #{public_dir}"
+    STDERR.puts "Public folder exists: #{File.exist?(public_dir)}"
+    STDERR.puts "Current working directory: #{Dir.pwd}"
+    STDERR.puts "api_server.rb location: #{__FILE__}"
+    
     if File.exist?(public_dir)
-      puts "Public folder contents: #{Dir.entries(public_dir).join(', ')}"
+      STDERR.puts "Public folder contents: #{Dir.entries(public_dir).join(', ')}"
+    else
+      STDERR.puts "WARNING: Public folder does not exist!"
     end
+    
     index_path = File.join(public_dir, 'index.html')
-    puts "Index.html path: #{index_path}"
-    puts "Index.html exists: #{File.exist?(index_path)}"
-    puts "=" * 50
+    STDERR.puts "Index.html path: #{index_path}"
+    STDERR.puts "Index.html exists: #{File.exist?(index_path)}"
+    
+    # 代替パスも確認
+    alt_paths = ['/app/public', File.join(Dir.pwd, 'public')]
+    alt_paths.each do |alt|
+      STDERR.puts "Alternative path #{alt} exists: #{File.exist?(alt)}"
+      if File.exist?(alt) && File.exist?(File.join(alt, 'index.html'))
+        STDERR.puts "Found index.html at alternative path: #{File.join(alt, 'index.html')}"
+      end
+    end
+    
+    STDERR.puts "=" * 50
   end
 
   # CORS設定
@@ -276,15 +293,35 @@ class ClinicsAPI < Sinatra::Base
   # ルートパス - フロントエンドのindex.htmlを返す
   get '/' do
     index_path = File.join(settings.public_folder, 'index.html')
-    puts "=" * 50
-    puts "Root path requested"
-    puts "Public folder: #{settings.public_folder}"
-    puts "Index path: #{index_path}"
-    puts "Index exists: #{File.exist?(index_path)}"
+    
+    # デバッグログ（stderrに出力してRailwayのログで確認可能）
+    STDERR.puts "=" * 50
+    STDERR.puts "Root path requested"
+    STDERR.puts "Public folder: #{settings.public_folder}"
+    STDERR.puts "Index path: #{index_path}"
+    STDERR.puts "Index exists: #{File.exist?(index_path)}"
+    STDERR.puts "Current working directory: #{Dir.pwd}"
+    
     if File.exist?(settings.public_folder)
-      puts "Public folder contents: #{Dir.entries(settings.public_folder).join(', ')}"
+      STDERR.puts "Public folder contents: #{Dir.entries(settings.public_folder).join(', ')}"
+    else
+      STDERR.puts "ERROR: Public folder does not exist!"
+      # 代替パスを試す
+      alt_paths = [
+        '/app/public',
+        File.join(Dir.pwd, 'public'),
+        File.join(File.dirname(__FILE__), '..', 'public')
+      ]
+      alt_paths.each do |alt|
+        STDERR.puts "Checking alternative path: #{alt} (exists: #{File.exist?(alt)})"
+        if File.exist?(alt) && File.exist?(File.join(alt, 'index.html'))
+          STDERR.puts "Found index.html at: #{File.join(alt, 'index.html')}"
+          content_type 'text/html'
+          return send_file File.join(alt, 'index.html')
+        end
+      end
     end
-    puts "=" * 50
+    STDERR.puts "=" * 50
     
     if File.exist?(index_path)
       content_type 'text/html'
@@ -297,7 +334,9 @@ class ClinicsAPI < Sinatra::Base
         message: "Frontend build not found. Index path: #{index_path}",
         public_folder: settings.public_folder,
         public_folder_exists: File.exist?(settings.public_folder),
-        public_folder_contents: File.exist?(settings.public_folder) ? Dir.entries(settings.public_folder).join(', ') : 'N/A'
+        public_folder_contents: File.exist?(settings.public_folder) ? Dir.entries(settings.public_folder).join(', ') : 'N/A',
+        current_dir: Dir.pwd,
+        debug_info: "Please check Railway logs for detailed information"
       }.to_json
     end
   end
