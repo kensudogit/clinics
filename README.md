@@ -82,20 +82,59 @@ clinics/
 ## はじめに
 
 ### 前提条件
-- Ruby 3.2.0+
+- Ruby 3.2.0+ (推奨: RubyInstaller for Windows)
+- MSYS2 (ネイティブ拡張を含むgemのビルドに必要)
 - Node.js 18+
 - MySQL 8.0+
 - Redis 6.0+
 
+**MSYS2のインストール**:
+```bash
+# RubyInstallerに付属するridkコマンドを使用
+ridk install
+# プロンプトで [1,3] を選択してENTERを押す
+```
+
 ### バックエンドセットアップ
+
+#### Windows環境
+
+**方法1: セットアップスクリプトを使用（推奨）**
+```bash
+cd backend
+setup.bat
+```
+
+**方法2: 手動セットアップ**
 ```bash
 cd backend
 bundle install
-rails db:create
-rails db:migrate
-rails db:seed
-rails server
+bundle exec rails db:create
+bundle exec rails db:migrate
+bundle exec rails db:seed
+bundle exec rails server -p 3001
 ```
+
+**方法3: Railsコマンドラッパーを使用**
+```bash
+cd backend
+rails_commands.bat db:create
+rails_commands.bat db:migrate
+rails_commands.bat db:seed
+rails_commands.bat server
+```
+
+#### Linux/Mac環境
+```bash
+cd backend
+bundle install
+bundle exec rails db:create
+bundle exec rails db:migrate
+bundle exec rails db:seed
+bundle exec rails server
+```
+
+**注意**: Windows環境では、`rails`コマンドの代わりに`bundle exec rails`または`rails_commands.bat`を使用してください。
 
 ### フロントエンドセットアップ
 ```bash

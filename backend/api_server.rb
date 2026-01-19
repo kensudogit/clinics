@@ -6,7 +6,7 @@ require 'redis'
 class ClinicsAPI < Sinatra::Base
   configure do
     enable :logging
-    set :port, 3001
+    set :port, ENV.fetch('PORT', 3000).to_i
     set :bind, '0.0.0.0'
   end
 
