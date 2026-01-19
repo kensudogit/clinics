@@ -368,18 +368,10 @@ class ClinicsAPI < Sinatra::Base
   get '/' do
     index_path = File.join(settings.public_folder, 'index.html')
     
-    # デバッグログ（stderrに出力してRailwayのログで確認可能）
-    STDERR.puts "=" * 50
-    STDERR.puts "Root path requested"
-    STDERR.puts "Public folder: #{settings.public_folder}"
-    STDERR.puts "Index path: #{index_path}"
-    STDERR.puts "Index exists: #{File.exist?(index_path)}"
-    STDERR.puts "Current working directory: #{Dir.pwd}"
-    
-    if File.exist?(settings.public_folder)
-      STDERR.puts "Public folder contents: #{Dir.entries(settings.public_folder).join(', ')}"
+    if File.exist?(index_path)
+      content_type 'text/html'
+      send_file index_path
     else
-      STDERR.puts "ERROR: Public folder does not exist!"
       # 代替パスを試す
       alt_paths = [
         '/app/public',
@@ -387,20 +379,14 @@ class ClinicsAPI < Sinatra::Base
         File.join(File.dirname(__FILE__), '..', 'public')
       ]
       alt_paths.each do |alt|
-        STDERR.puts "Checking alternative path: #{alt} (exists: #{File.exist?(alt)})"
-        if File.exist?(alt) && File.exist?(File.join(alt, 'index.html'))
-          STDERR.puts "Found index.html at: #{File.join(alt, 'index.html')}"
+        alt_index = File.join(alt, 'index.html')
+        if File.exist?(alt_index)
+          STDERR.puts "Found index.html at alternative path: #{alt_index}"
           content_type 'text/html'
-          return send_file File.join(alt, 'index.html')
+          return send_file alt_index
         end
       end
-    end
-    STDERR.puts "=" * 50
-    
-    if File.exist?(index_path)
-      content_type 'text/html'
-      send_file index_path
-    else
+      
       status 404
       content_type :json
       { 
@@ -408,9 +394,7 @@ class ClinicsAPI < Sinatra::Base
         message: "Frontend build not found. Index path: #{index_path}",
         public_folder: settings.public_folder,
         public_folder_exists: File.exist?(settings.public_folder),
-        public_folder_contents: File.exist?(settings.public_folder) ? Dir.entries(settings.public_folder).join(', ') : 'N/A',
-        current_dir: Dir.pwd,
-        debug_info: "Please check Railway logs for detailed information"
+        current_dir: Dir.pwd
       }.to_json
     end
   end
