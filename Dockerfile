@@ -42,18 +42,31 @@ COPY frontend/postcss.config.js ./frontend-build/postcss.config.js
 
 # Build frontend
 WORKDIR /app/frontend-build
-RUN npm ci --legacy-peer-deps && npm run build || (echo "Frontend build failed, continuing..." && mkdir -p build)
+RUN echo "Building frontend..." && \
+    npm ci --legacy-peer-deps && \
+    npm run build && \
+    echo "Frontend build completed successfully" && \
+    ls -la build/ || (echo "ERROR: Frontend build failed!" && exit 1)
 
 # Copy built frontend to public directory
 WORKDIR /app
-RUN mkdir -p public && \
+RUN echo "Copying frontend build to public directory..." && \
+    mkdir -p public && \
     if [ -d "frontend-build/build" ] && [ "$(ls -A frontend-build/build 2>/dev/null)" ]; then \
-        cp -r frontend-build/build/* ./public/; \
+        echo "Copying from frontend-build/build..." && \
+        cp -r frontend-build/build/* ./public/ && \
+        echo "Frontend files copied successfully" && \
+        ls -la ./public/; \
     elif [ -d "frontend/build" ] && [ "$(ls -A frontend/build 2>/dev/null)" ]; then \
-        cp -r frontend/build/* ./public/; \
+        echo "Copying from frontend/build..." && \
+        cp -r frontend/build/* ./public/ && \
+        echo "Frontend files copied successfully" && \
+        ls -la ./public/; \
     else \
-        echo "Warning: Frontend build not found, creating empty public directory"; \
-        mkdir -p ./public; \
+        echo "ERROR: Frontend build not found!" && \
+        echo "frontend-build/build exists: $([ -d frontend-build/build ] && echo yes || echo no)" && \
+        echo "frontend/build exists: $([ -d frontend/build ] && echo yes || echo no)" && \
+        exit 1; \
     fi
 
 # Create necessary directories
