@@ -267,22 +267,13 @@ class ClinicsAPI < Sinatra::Base
     consultation.to_json
   end
 
-  # エラーハンドリング
-  error 404 do
-    content_type :json
-    { error: 'Not Found', message: 'The requested resource was not found' }.to_json
-  end
-
-  error 500 do
-    content_type :json
-    { error: 'Internal Server Error', message: 'Something went wrong' }.to_json
-  end
-
   # 静的ファイルの配信（CSS、JS、画像など）
+  # 注意: このルーティングはエラーハンドラーの前に定義する必要がある
   get '/static/*' do
     file_path = File.join(settings.public_folder, 'static', params[:splat].first)
     STDERR.puts "=" * 50
     STDERR.puts "Static file requested: #{request.path}"
+    STDERR.puts "Splat param: #{params[:splat].inspect}"
     STDERR.puts "File path: #{file_path}"
     STDERR.puts "File exists: #{File.exist?(file_path)}"
     STDERR.puts "Is file: #{File.file?(file_path) if File.exist?(file_path)}"
@@ -294,6 +285,13 @@ class ClinicsAPI < Sinatra::Base
       STDERR.puts "Static directory exists: #{File.exist?(static_dir)}"
       if File.exist?(static_dir)
         STDERR.puts "Static directory contents: #{Dir.entries(static_dir).join(', ')}"
+        # リクエストされたファイルの親ディレクトリも確認
+        requested_dir = File.dirname(file_path)
+        STDERR.puts "Requested file directory: #{requested_dir}"
+        STDERR.puts "Requested file directory exists: #{File.exist?(requested_dir)}"
+        if File.exist?(requested_dir)
+          STDERR.puts "Requested file directory contents: #{Dir.entries(requested_dir).join(', ')}"
+        end
       end
     end
     STDERR.puts "=" * 50
@@ -321,9 +319,29 @@ class ClinicsAPI < Sinatra::Base
       send_file file_path
     else
       STDERR.puts "ERROR: Static file not found!"
+      # 404エラーを返すが、MIMEタイプは適切に設定する
+      ext = File.extname(file_path).downcase
+      mime_type = case ext
+                   when '.js' then 'application/javascript'
+                   when '.css' then 'text/css'
+                   when '.png' then 'image/png'
+                   when '.jpg', '.jpeg' then 'image/jpeg'
+                   when '.gif' then 'image/gif'
+                   when '.svg' then 'image/svg+xml'
+                   when '.ico' then 'image/x-icon'
+                   when '.json' then 'application/json'
+                   else 'text/plain'
+                   end
       status 404
-      content_type :json
-      { error: 'Not Found', message: "Static file not found: #{request.path}", debug: { file_path: file_path, exists: File.exist?(file_path) } }.to_json
+      content_type mime_type
+      # JSONではなく、適切なMIMEタイプで404を返す
+      # ただし、デバッグ情報はJSONで返す
+      if mime_type == 'application/json'
+        { error: 'Not Found', message: "Static file not found: #{request.path}", debug: { file_path: file_path, exists: File.exist?(file_path) } }.to_json
+      else
+        # JavaScriptやCSSの場合は、空のレスポンスまたはエラーメッセージを返す
+        ''
+      end
     end
   end
 
@@ -398,7 +416,34 @@ class ClinicsAPI < Sinatra::Base
       send_file file_path
     else
       status 404
+      content_type 'text/plain'
+      'Not Found'
     end
+  end
+
+  # エラーハンドリング（ルーティングの後に定義）
+  # 注意: 静的ファイルの404は既に適切なMIMEタイプで処理されているため、
+  # このエラーハンドラーは主にAPIエンドポイントの404を処理します
+  error 404 do
+    # 静的ファイルパスの場合は、既に処理されているはずなので、ここには来ない
+    if request.path.start_with?('/static/') || 
+       request.path.start_with?('/assets/') ||
+       request.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)
+      # 静的ファイルの404は、適切なMIMEタイプで処理されているはず
+      # ここに来る場合は、ルーティングの問題の可能性がある
+      STDERR.puts "WARNING: Static file 404 reached error handler: #{request.path}"
+      content_type 'text/plain'
+      'Not Found'
+    else
+      # APIエンドポイントの404
+      content_type :json
+      { error: 'Not Found', message: 'The requested resource was not found' }.to_json
+    end
+  end
+
+  error 500 do
+    content_type :json
+    { error: 'Internal Server Error', message: 'Something went wrong' }.to_json
   end
 
   # SPA用のルーティング - すべてのパスでindex.htmlを返す（APIパスと静的ファイルパス以外）
