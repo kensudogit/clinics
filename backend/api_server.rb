@@ -281,12 +281,33 @@ class ClinicsAPI < Sinatra::Base
   # 静的ファイルの配信（CSS、JS、画像など）
   get '/static/*' do
     file_path = File.join(settings.public_folder, 'static', params[:splat].first)
-    if File.exist?(file_path)
+    STDERR.puts "Static file requested: #{request.path}"
+    STDERR.puts "File path: #{file_path}"
+    STDERR.puts "File exists: #{File.exist?(file_path)}"
+    
+    if File.exist?(file_path) && File.file?(file_path)
+      # MIMEタイプを正しく設定
+      ext = File.extname(file_path).downcase
+      content_type case ext
+                   when '.js' then 'application/javascript'
+                   when '.css' then 'text/css'
+                   when '.png' then 'image/png'
+                   when '.jpg', '.jpeg' then 'image/jpeg'
+                   when '.gif' then 'image/gif'
+                   when '.svg' then 'image/svg+xml'
+                   when '.ico' then 'image/x-icon'
+                   when '.json' then 'application/json'
+                   when '.woff' then 'font/woff'
+                   when '.woff2' then 'font/woff2'
+                   when '.ttf' then 'font/ttf'
+                   when '.eot' then 'application/vnd.ms-fontobject'
+                   else 'application/octet-stream'
+                   end
       send_file file_path
     else
       status 404
       content_type :json
-      { error: 'Not Found', message: 'Static file not found' }.to_json
+      { error: 'Not Found', message: "Static file not found: #{request.path}" }.to_json
     end
   end
 
@@ -341,15 +362,52 @@ class ClinicsAPI < Sinatra::Base
     end
   end
 
+  # その他の静的ファイル（manifest.json、favicon.icoなど）
+  get '/manifest.json' do
+    file_path = File.join(settings.public_folder, 'manifest.json')
+    if File.exist?(file_path)
+      content_type 'application/manifest+json'
+      send_file file_path
+    else
+      status 404
+      content_type :json
+      { error: 'Not Found', message: 'manifest.json not found' }.to_json
+    end
+  end
+
+  get '/favicon.ico' do
+    file_path = File.join(settings.public_folder, 'favicon.ico')
+    if File.exist?(file_path)
+      content_type 'image/x-icon'
+      send_file file_path
+    else
+      status 404
+    end
+  end
+
   # SPA用のルーティング - すべてのパスでindex.htmlを返す（APIパス以外）
   # このルーティングは最後に定義する必要がある（APIエンドポイントの後に）
   get '/*' do
-    # APIパスは既に処理されているので、ここには来ない
+    # APIパスと静的ファイルパスは既に処理されているので、ここには来ない
     file_path = File.join(settings.public_folder, request.path)
-    puts "SPA route requested: #{request.path}, file_path: #{file_path}"
+    STDERR.puts "SPA route requested: #{request.path}, file_path: #{file_path}"
     
     # 静的ファイルが存在する場合はそれを返す
     if File.exist?(file_path) && File.file?(file_path)
+      # MIMEタイプを正しく設定
+      ext = File.extname(file_path).downcase
+      content_type case ext
+                   when '.html' then 'text/html'
+                   when '.js' then 'application/javascript'
+                   when '.css' then 'text/css'
+                   when '.png' then 'image/png'
+                   when '.jpg', '.jpeg' then 'image/jpeg'
+                   when '.gif' then 'image/gif'
+                   when '.svg' then 'image/svg+xml'
+                   when '.ico' then 'image/x-icon'
+                   when '.json' then 'application/json'
+                   else 'application/octet-stream'
+                   end
       send_file file_path
     else
       # SPA用にindex.htmlを返す
