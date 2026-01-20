@@ -288,7 +288,8 @@ class ClinicsAPI < Sinatra::Base
   # 静的ファイルの配信（CSS、JS、画像など）
   # 注意: このルーティングはエラーハンドラーの前に定義する必要がある
   # Sinatraのルーティングでは、より具体的なパターンが先に評価される
-  get %r{^/static/(.+)$} do |path|
+  # Sinatra 3.x では、^ と $ を含む正規表現は使用できないため、パスパターンを使用
+  get '/static/*' do |path|
     # パスを正規化（URLデコードとパストラバーサル対策）
     safe_path = path.gsub(/\.\./, '').gsub(/[^a-zA-Z0-9._\/-]/, '')
     
