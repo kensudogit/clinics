@@ -291,13 +291,29 @@ class ClinicsAPI < Sinatra::Base
   get %r{^/static/(.+)$} do |path|
     # パスを正規化（URLデコードとパストラバーサル対策）
     safe_path = path.gsub(/\.\./, '').gsub(/[^a-zA-Z0-9._\/-]/, '')
-    file_path = File.join(settings.public_folder, 'static', safe_path)
+    
+    # 複数の可能なパスを試す（public/build/static を優先）
+    possible_paths = [
+      File.join(settings.public_folder, 'build', 'static', safe_path),  # public/build/static/js/... または public/build/static/css/...
+      File.join(settings.public_folder, 'static', safe_path)              # public/static/js/... または public/static/css/...
+    ]
     
     # デバッグログ（本番環境でも確認可能）
-    STDERR.puts "[STATIC] Request: #{request.path} -> #{file_path}"
+    STDERR.puts "[STATIC] ========================================"
+    STDERR.puts "[STATIC] Request: #{request.path}"
+    STDERR.puts "[STATIC] Safe path: #{safe_path}"
+    STDERR.puts "[STATIC] Public folder: #{settings.public_folder}"
+    STDERR.puts "[STATIC] Trying paths:"
+    possible_paths.each_with_index do |p, i|
+      exists = File.exist?(p)
+      is_file = exists && File.file?(p)
+      STDERR.puts "[STATIC]   #{i+1}. #{p} (exists: #{exists}, is_file: #{is_file})"
+    end
     
-    # ファイルが存在するか確認
-    if File.exist?(file_path) && File.file?(file_path)
+    # ファイルが存在するパスを見つける
+    file_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
+    
+    if file_path
       # MIMEタイプを正しく設定
       ext = File.extname(file_path).downcase
       mime_type = case ext
@@ -315,31 +331,72 @@ class ClinicsAPI < Sinatra::Base
                    when '.eot' then 'application/vnd.ms-fontobject'
                    else 'application/octet-stream'
                    end
+      STDERR.puts "[STATIC] ✓ Found file at: #{file_path}"
+      STDERR.puts "[STATIC] MIME type: #{mime_type}"
+      STDERR.puts "[STATIC] ========================================"
       content_type mime_type
       send_file file_path
     else
       # ファイルが見つからない場合の詳細なデバッグ情報
-      STDERR.puts "[STATIC ERROR] File not found: #{file_path}"
+      STDERR.puts "[STATIC ERROR] ✗ File not found in any of the tried paths"
+      STDERR.puts "[STATIC ERROR] Requested path: #{safe_path}"
       STDERR.puts "[STATIC ERROR] Public folder: #{settings.public_folder}"
       STDERR.puts "[STATIC ERROR] Public folder exists: #{File.exist?(settings.public_folder)}"
       
       if File.exist?(settings.public_folder)
+        STDERR.puts "[STATIC ERROR] Public folder contents: #{Dir.entries(settings.public_folder).reject { |e| e.start_with?('.') }.join(', ')}"
+        
+        # build/static ディレクトリを優先的に確認
+        build_static_dir = File.join(settings.public_folder, 'build', 'static')
+        STDERR.puts "[STATIC ERROR] Checking build/static directory..."
+        STDERR.puts "[STATIC ERROR] Build/static dir exists: #{File.exist?(build_static_dir)}"
+        if File.exist?(build_static_dir)
+          STDERR.puts "[STATIC ERROR] Build/static dir contents: #{Dir.entries(build_static_dir).reject { |e| e.start_with?('.') }.join(', ')}"
+          build_js_dir = File.join(build_static_dir, 'js')
+          build_css_dir = File.join(build_static_dir, 'css')
+          STDERR.puts "[STATIC ERROR] Build/JS dir exists: #{File.exist?(build_js_dir)}"
+          STDERR.puts "[STATIC ERROR] Build/CSS dir exists: #{File.exist?(build_css_dir)}"
+          if File.exist?(build_js_dir)
+            js_files = Dir.entries(build_js_dir).select { |f| f.end_with?('.js') && !f.start_with?('.') }
+            STDERR.puts "[STATIC ERROR] Build/JS files (#{js_files.length}): #{js_files.join(', ')}"
+            # リクエストされたファイル名と一致するファイルを探す
+            requested_filename = File.basename(safe_path)
+            matching_file = js_files.find { |f| f == requested_filename }
+            STDERR.puts "[STATIC ERROR] Requested filename: #{requested_filename}"
+            STDERR.puts "[STATIC ERROR] Matching file found: #{matching_file ? 'YES' : 'NO'}"
+          end
+          if File.exist?(build_css_dir)
+            css_files = Dir.entries(build_css_dir).select { |f| f.end_with?('.css') && !f.start_with?('.') }
+            STDERR.puts "[STATIC ERROR] Build/CSS files (#{css_files.length}): #{css_files.join(', ')}"
+            # リクエストされたファイル名と一致するファイルを探す
+            requested_filename = File.basename(safe_path)
+            matching_file = css_files.find { |f| f == requested_filename }
+            STDERR.puts "[STATIC ERROR] Requested filename: #{requested_filename}"
+            STDERR.puts "[STATIC ERROR] Matching file found: #{matching_file ? 'YES' : 'NO'}"
+          end
+        end
+        
+        # static ディレクトリも確認（フォールバック）
         static_dir = File.join(settings.public_folder, 'static')
+        STDERR.puts "[STATIC ERROR] Checking static directory (fallback)..."
         STDERR.puts "[STATIC ERROR] Static dir exists: #{File.exist?(static_dir)}"
         if File.exist?(static_dir)
-          STDERR.puts "[STATIC ERROR] Static dir contents: #{Dir.entries(static_dir).join(', ')}"
+          STDERR.puts "[STATIC ERROR] Static dir contents: #{Dir.entries(static_dir).reject { |e| e.start_with?('.') }.join(', ')}"
           js_dir = File.join(static_dir, 'js')
           css_dir = File.join(static_dir, 'css')
           STDERR.puts "[STATIC ERROR] JS dir exists: #{File.exist?(js_dir)}"
           STDERR.puts "[STATIC ERROR] CSS dir exists: #{File.exist?(css_dir)}"
           if File.exist?(js_dir)
-            STDERR.puts "[STATIC ERROR] JS files: #{Dir.entries(js_dir).select { |f| f.end_with?('.js') }.join(', ')}"
+            js_files = Dir.entries(js_dir).select { |f| f.end_with?('.js') && !f.start_with?('.') }
+            STDERR.puts "[STATIC ERROR] JS files (#{js_files.length}): #{js_files.join(', ')}"
           end
           if File.exist?(css_dir)
-            STDERR.puts "[STATIC ERROR] CSS files: #{Dir.entries(css_dir).select { |f| f.end_with?('.css') }.join(', ')}"
+            css_files = Dir.entries(css_dir).select { |f| f.end_with?('.css') && !f.start_with?('.') }
+            STDERR.puts "[STATIC ERROR] CSS files (#{css_files.length}): #{css_files.join(', ')}"
           end
         end
       end
+      STDERR.puts "[STATIC ERROR] ========================================"
       
       # 404エラーを返す
       ext = File.extname(file_path).downcase
@@ -362,75 +419,87 @@ class ClinicsAPI < Sinatra::Base
 
   # ルートパス - フロントエンドのindex.htmlを返す
   get '/' do
-    index_path = File.join(settings.public_folder, 'index.html')
+    # 複数の可能なパスを試す
+    possible_paths = [
+      File.join(settings.public_folder, 'index.html'),
+      File.join(settings.public_folder, 'build', 'index.html'),
+      File.join('/app/public', 'index.html'),
+      File.join('/app/public', 'build', 'index.html'),
+      File.join(Dir.pwd, 'public', 'index.html'),
+      File.join(Dir.pwd, 'public', 'build', 'index.html'),
+      File.join(File.dirname(__FILE__), '..', 'public', 'index.html'),
+      File.join(File.dirname(__FILE__), '..', 'public', 'build', 'index.html')
+    ]
     
-    STDERR.puts "[ROOT] Serving index.html from: #{index_path}"
+    STDERR.puts "[ROOT] Serving index.html"
     STDERR.puts "[ROOT] Public folder: #{settings.public_folder}"
-    STDERR.puts "[ROOT] Public folder exists: #{File.exist?(settings.public_folder)}"
+    STDERR.puts "[ROOT] Trying paths: #{possible_paths.join(', ')}"
     
-    if File.exist?(index_path)
-      STDERR.puts "[ROOT] index.html found, serving..."
+    index_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
+    
+    if index_path
+      STDERR.puts "[ROOT] Found index.html at: #{index_path}"
       content_type 'text/html'
       send_file index_path
     else
-      STDERR.puts "[ROOT] index.html not found at primary path, trying alternatives..."
-      # 代替パスを試す
-      alt_paths = [
-        '/app/public',
-        File.join(Dir.pwd, 'public'),
-        File.join(File.dirname(__FILE__), '..', 'public')
-      ]
-      alt_paths.each do |alt|
-        alt_index = File.join(alt, 'index.html')
-        STDERR.puts "[ROOT] Checking: #{alt_index} (exists: #{File.exist?(alt_index)})"
-        if File.exist?(alt_index)
-          STDERR.puts "[ROOT] Found index.html at alternative path: #{alt_index}"
-          content_type 'text/html'
-          return send_file alt_index
-        end
-      end
-      
       STDERR.puts "[ROOT ERROR] index.html not found in any location!"
+      STDERR.puts "[ROOT ERROR] Public folder exists: #{File.exist?(settings.public_folder)}"
+      if File.exist?(settings.public_folder)
+        STDERR.puts "[ROOT ERROR] Public folder contents: #{Dir.entries(settings.public_folder).join(', ')}"
+      end
       status 404
       content_type :json
       { 
         error: 'Not Found', 
-        message: "Frontend build not found. Index path: #{index_path}",
+        message: "Frontend build not found",
         public_folder: settings.public_folder,
         public_folder_exists: File.exist?(settings.public_folder),
         current_dir: Dir.pwd,
-        checked_paths: alt_paths.map { |p| File.join(p, 'index.html') }
+        tried_paths: possible_paths
       }.to_json
     end
   end
 
   # その他の静的ファイル（manifest.json、favicon.icoなど）
   get '/manifest.json' do
-    file_path = File.join(settings.public_folder, 'manifest.json')
-    STDERR.puts "Manifest.json requested: #{request.path}"
-    STDERR.puts "Manifest.json path: #{file_path}"
-    STDERR.puts "Manifest.json exists: #{File.exist?(file_path)}"
-    if File.exist?(file_path)
+    # 複数の可能なパスを試す
+    possible_paths = [
+      File.join(settings.public_folder, 'manifest.json'),
+      File.join(settings.public_folder, 'build', 'manifest.json')
+    ]
+    
+    STDERR.puts "[MANIFEST] Requested: #{request.path}"
+    STDERR.puts "[MANIFEST] Trying paths: #{possible_paths.join(', ')}"
+    
+    file_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
+    
+    if file_path
+      STDERR.puts "[MANIFEST] Found at: #{file_path}"
       content_type 'application/manifest+json'
       send_file file_path
     else
-      STDERR.puts "ERROR: manifest.json not found!"
+      STDERR.puts "[MANIFEST ERROR] Not found in any path"
+      STDERR.puts "[MANIFEST ERROR] Public folder: #{settings.public_folder}"
+      STDERR.puts "[MANIFEST ERROR] Public folder contents: #{File.exist?(settings.public_folder) ? Dir.entries(settings.public_folder).join(', ') : 'does not exist'}"
       status 404
       content_type 'application/json'
-      { error: 'Not Found', message: 'manifest.json not found', debug: { file_path: file_path, exists: File.exist?(file_path) } }.to_json
+      { error: 'Not Found', message: 'manifest.json not found', debug: { tried_paths: possible_paths } }.to_json
     end
   end
 
   get '/favicon.ico' do
-    file_path = File.join(settings.public_folder, 'favicon.ico')
-    STDERR.puts "Favicon.ico requested: #{request.path}"
-    STDERR.puts "Favicon.ico path: #{file_path}"
-    STDERR.puts "Favicon.ico exists: #{File.exist?(file_path)}"
-    if File.exist?(file_path)
+    # 複数の可能なパスを試す
+    possible_paths = [
+      File.join(settings.public_folder, 'favicon.ico'),
+      File.join(settings.public_folder, 'build', 'favicon.ico')
+    ]
+    
+    file_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
+    
+    if file_path
       content_type 'image/x-icon'
       send_file file_path
     else
-      STDERR.puts "ERROR: favicon.ico not found!"
       status 404
       content_type 'text/plain'
       'Not Found'
@@ -486,17 +555,25 @@ class ClinicsAPI < Sinatra::Base
       return { error: 'Not Found', message: 'Static file route should have handled this' }.to_json
     end
     
-    # SPA用にindex.htmlを返す
-    index_path = File.join(settings.public_folder, 'index.html')
-    STDERR.puts "[SPA] Serving index.html from: #{index_path}"
-    if File.exist?(index_path)
+    # SPA用にindex.htmlを返す（複数のパスを試す）
+    possible_paths = [
+      File.join(settings.public_folder, 'index.html'),
+      File.join(settings.public_folder, 'build', 'index.html'),
+      File.join('/app/public', 'index.html'),
+      File.join('/app/public', 'build', 'index.html')
+    ]
+    
+    index_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
+    
+    if index_path
+      STDERR.puts "[SPA] Serving index.html from: #{index_path}"
       content_type 'text/html'
       send_file index_path
     else
-      STDERR.puts "[SPA ERROR] index.html not found at: #{index_path}"
+      STDERR.puts "[SPA ERROR] index.html not found in any path"
       status 404
       content_type :json
-      { error: 'Not Found', message: "Frontend build not found. Index path: #{index_path}" }.to_json
+      { error: 'Not Found', message: "Frontend build not found", tried_paths: possible_paths }.to_json
     end
   end
 end
