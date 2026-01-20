@@ -292,10 +292,11 @@ class ClinicsAPI < Sinatra::Base
     # パスを正規化（URLデコードとパストラバーサル対策）
     safe_path = path.gsub(/\.\./, '').gsub(/[^a-zA-Z0-9._\/-]/, '')
     
-    # 複数の可能なパスを試す（public/build/static を優先）
+    # 複数の可能なパスを試す（public/build/build/static を最優先）
     possible_paths = [
-      File.join(settings.public_folder, 'build', 'static', safe_path),  # public/build/static/js/... または public/build/static/css/...
-      File.join(settings.public_folder, 'static', safe_path)              # public/static/js/... または public/static/css/...
+      File.join(settings.public_folder, 'build', 'build', 'static', safe_path),  # public/build/build/static/js/... または public/build/build/static/css/...
+      File.join(settings.public_folder, 'build', 'static', safe_path),            # public/build/static/js/... または public/build/static/css/...
+      File.join(settings.public_folder, 'static', safe_path)                     # public/static/js/... または public/static/css/...
     ]
     
     # デバッグログ（本番環境でも確認可能）
@@ -346,7 +347,35 @@ class ClinicsAPI < Sinatra::Base
       if File.exist?(settings.public_folder)
         STDERR.puts "[STATIC ERROR] Public folder contents: #{Dir.entries(settings.public_folder).reject { |e| e.start_with?('.') }.join(', ')}"
         
-        # build/static ディレクトリを優先的に確認
+        # build/build/static ディレクトリを最優先で確認
+        build_build_static_dir = File.join(settings.public_folder, 'build', 'build', 'static')
+        STDERR.puts "[STATIC ERROR] Checking build/build/static directory..."
+        STDERR.puts "[STATIC ERROR] Build/build/static dir exists: #{File.exist?(build_build_static_dir)}"
+        if File.exist?(build_build_static_dir)
+          STDERR.puts "[STATIC ERROR] Build/build/static dir contents: #{Dir.entries(build_build_static_dir).reject { |e| e.start_with?('.') }.join(', ')}"
+          build_build_js_dir = File.join(build_build_static_dir, 'js')
+          build_build_css_dir = File.join(build_build_static_dir, 'css')
+          STDERR.puts "[STATIC ERROR] Build/build/JS dir exists: #{File.exist?(build_build_js_dir)}"
+          STDERR.puts "[STATIC ERROR] Build/build/CSS dir exists: #{File.exist?(build_build_css_dir)}"
+          if File.exist?(build_build_js_dir)
+            js_files = Dir.entries(build_build_js_dir).select { |f| f.end_with?('.js') && !f.start_with?('.') }
+            STDERR.puts "[STATIC ERROR] Build/build/JS files (#{js_files.length}): #{js_files.join(', ')}"
+            requested_filename = File.basename(safe_path)
+            matching_file = js_files.find { |f| f == requested_filename }
+            STDERR.puts "[STATIC ERROR] Requested filename: #{requested_filename}"
+            STDERR.puts "[STATIC ERROR] Matching file found: #{matching_file ? 'YES' : 'NO'}"
+          end
+          if File.exist?(build_build_css_dir)
+            css_files = Dir.entries(build_build_css_dir).select { |f| f.end_with?('.css') && !f.start_with?('.') }
+            STDERR.puts "[STATIC ERROR] Build/build/CSS files (#{css_files.length}): #{css_files.join(', ')}"
+            requested_filename = File.basename(safe_path)
+            matching_file = css_files.find { |f| f == requested_filename }
+            STDERR.puts "[STATIC ERROR] Requested filename: #{requested_filename}"
+            STDERR.puts "[STATIC ERROR] Matching file found: #{matching_file ? 'YES' : 'NO'}"
+          end
+        end
+        
+        # build/static ディレクトリも確認（フォールバック）
         build_static_dir = File.join(settings.public_folder, 'build', 'static')
         STDERR.puts "[STATIC ERROR] Checking build/static directory..."
         STDERR.puts "[STATIC ERROR] Build/static dir exists: #{File.exist?(build_static_dir)}"
@@ -419,16 +448,20 @@ class ClinicsAPI < Sinatra::Base
 
   # ルートパス - フロントエンドのindex.htmlを返す
   get '/' do
-    # 複数の可能なパスを試す
+    # 複数の可能なパスを試す（build/build を最優先）
     possible_paths = [
-      File.join(settings.public_folder, 'index.html'),
+      File.join(settings.public_folder, 'build', 'build', 'index.html'),
       File.join(settings.public_folder, 'build', 'index.html'),
-      File.join('/app/public', 'index.html'),
+      File.join(settings.public_folder, 'index.html'),
+      File.join('/app/public', 'build', 'build', 'index.html'),
       File.join('/app/public', 'build', 'index.html'),
-      File.join(Dir.pwd, 'public', 'index.html'),
+      File.join('/app/public', 'index.html'),
+      File.join(Dir.pwd, 'public', 'build', 'build', 'index.html'),
       File.join(Dir.pwd, 'public', 'build', 'index.html'),
-      File.join(File.dirname(__FILE__), '..', 'public', 'index.html'),
-      File.join(File.dirname(__FILE__), '..', 'public', 'build', 'index.html')
+      File.join(Dir.pwd, 'public', 'index.html'),
+      File.join(File.dirname(__FILE__), '..', 'public', 'build', 'build', 'index.html'),
+      File.join(File.dirname(__FILE__), '..', 'public', 'build', 'index.html'),
+      File.join(File.dirname(__FILE__), '..', 'public', 'index.html')
     ]
     
     STDERR.puts "[ROOT] Serving index.html"
@@ -462,10 +495,11 @@ class ClinicsAPI < Sinatra::Base
 
   # その他の静的ファイル（manifest.json、favicon.icoなど）
   get '/manifest.json' do
-    # 複数の可能なパスを試す
+    # 複数の可能なパスを試す（build/build を最優先）
     possible_paths = [
-      File.join(settings.public_folder, 'manifest.json'),
-      File.join(settings.public_folder, 'build', 'manifest.json')
+      File.join(settings.public_folder, 'build', 'build', 'manifest.json'),
+      File.join(settings.public_folder, 'build', 'manifest.json'),
+      File.join(settings.public_folder, 'manifest.json')
     ]
     
     STDERR.puts "[MANIFEST] Requested: #{request.path}"
@@ -488,10 +522,11 @@ class ClinicsAPI < Sinatra::Base
   end
 
   get '/favicon.ico' do
-    # 複数の可能なパスを試す
+    # 複数の可能なパスを試す（build/build を最優先）
     possible_paths = [
-      File.join(settings.public_folder, 'favicon.ico'),
-      File.join(settings.public_folder, 'build', 'favicon.ico')
+      File.join(settings.public_folder, 'build', 'build', 'favicon.ico'),
+      File.join(settings.public_folder, 'build', 'favicon.ico'),
+      File.join(settings.public_folder, 'favicon.ico')
     ]
     
     file_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
@@ -555,12 +590,14 @@ class ClinicsAPI < Sinatra::Base
       return { error: 'Not Found', message: 'Static file route should have handled this' }.to_json
     end
     
-    # SPA用にindex.htmlを返す（複数のパスを試す）
+    # SPA用にindex.htmlを返す（複数のパスを試す、build/build を最優先）
     possible_paths = [
-      File.join(settings.public_folder, 'index.html'),
+      File.join(settings.public_folder, 'build', 'build', 'index.html'),
       File.join(settings.public_folder, 'build', 'index.html'),
-      File.join('/app/public', 'index.html'),
-      File.join('/app/public', 'build', 'index.html')
+      File.join(settings.public_folder, 'index.html'),
+      File.join('/app/public', 'build', 'build', 'index.html'),
+      File.join('/app/public', 'build', 'index.html'),
+      File.join('/app/public', 'index.html')
     ]
     
     index_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
