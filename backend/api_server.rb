@@ -499,22 +499,46 @@ class ClinicsAPI < Sinatra::Base
     possible_paths = [
       File.join(settings.public_folder, 'build', 'build', 'manifest.json'),
       File.join(settings.public_folder, 'build', 'manifest.json'),
-      File.join(settings.public_folder, 'manifest.json')
+      File.join(settings.public_folder, 'manifest.json'),
+      File.join('/app/public', 'build', 'build', 'manifest.json'),
+      File.join('/app/public', 'build', 'manifest.json'),
+      File.join('/app/public', 'manifest.json')
     ]
     
+    STDERR.puts "[MANIFEST] ========================================"
     STDERR.puts "[MANIFEST] Requested: #{request.path}"
-    STDERR.puts "[MANIFEST] Trying paths: #{possible_paths.join(', ')}"
+    STDERR.puts "[MANIFEST] Public folder: #{settings.public_folder}"
+    STDERR.puts "[MANIFEST] Trying paths:"
+    possible_paths.each_with_index do |p, i|
+      exists = File.exist?(p)
+      is_file = exists && File.file?(p)
+      STDERR.puts "[MANIFEST]   #{i+1}. #{p} (exists: #{exists}, is_file: #{is_file})"
+    end
     
     file_path = possible_paths.find { |p| File.exist?(p) && File.file?(p) }
     
     if file_path
-      STDERR.puts "[MANIFEST] Found at: #{file_path}"
+      STDERR.puts "[MANIFEST] ✓ Found at: #{file_path}"
+      STDERR.puts "[MANIFEST] ========================================"
       content_type 'application/manifest+json'
       send_file file_path
     else
-      STDERR.puts "[MANIFEST ERROR] Not found in any path"
-      STDERR.puts "[MANIFEST ERROR] Public folder: #{settings.public_folder}"
-      STDERR.puts "[MANIFEST ERROR] Public folder contents: #{File.exist?(settings.public_folder) ? Dir.entries(settings.public_folder).join(', ') : 'does not exist'}"
+      STDERR.puts "[MANIFEST ERROR] ✗ Not found in any path"
+      STDERR.puts "[MANIFEST ERROR] Public folder exists: #{File.exist?(settings.public_folder)}"
+      if File.exist?(settings.public_folder)
+        STDERR.puts "[MANIFEST ERROR] Public folder contents: #{Dir.entries(settings.public_folder).reject { |e| e.start_with?('.') }.join(', ')}"
+        build_dir = File.join(settings.public_folder, 'build')
+        STDERR.puts "[MANIFEST ERROR] Build dir exists: #{File.exist?(build_dir)}"
+        if File.exist?(build_dir)
+          STDERR.puts "[MANIFEST ERROR] Build dir contents: #{Dir.entries(build_dir).reject { |e| e.start_with?('.') }.join(', ')}"
+          build_build_dir = File.join(build_dir, 'build')
+          STDERR.puts "[MANIFEST ERROR] Build/build dir exists: #{File.exist?(build_build_dir)}"
+          if File.exist?(build_build_dir)
+            STDERR.puts "[MANIFEST ERROR] Build/build dir contents: #{Dir.entries(build_build_dir).reject { |e| e.start_with?('.') }.join(', ')}"
+          end
+        end
+      end
+      STDERR.puts "[MANIFEST ERROR] ========================================"
       status 404
       content_type 'application/json'
       { error: 'Not Found', message: 'manifest.json not found', debug: { tried_paths: possible_paths } }.to_json
