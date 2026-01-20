@@ -50,52 +50,54 @@ RUN echo "Building frontend..." && \
 
 # Copy built frontend to public directory
 WORKDIR /app
-RUN echo "Copying frontend build to public directory..." && \
+RUN echo "=== Copying frontend build to public directory ===" && \
     mkdir -p public && \
     if [ -d "frontend-build/build" ] && [ "$(ls -A frontend-build/build 2>/dev/null)" ]; then \
-        echo "Copying from frontend-build/build..." && \
+        echo "Source: frontend-build/build" && \
         echo "Contents of frontend-build/build:" && \
         ls -la frontend-build/build/ && \
+        echo "Checking for index.html..." && \
+        [ -f "frontend-build/build/index.html" ] && echo "index.html found" || echo "ERROR: index.html not found!" && \
         echo "Checking for static directory..." && \
-        ls -la frontend-build/build/static/ 2>/dev/null || echo "WARNING: static directory not found in build output" && \
-        cp -r frontend-build/build/* ./public/ && \
-        echo "Frontend files copied successfully" && \
-        echo "Contents of public directory:" && \
-        ls -la ./public/ && \
-        echo "Checking for static directory in public:" && \
-        ls -la ./public/static/ 2>/dev/null || echo "WARNING: static directory not found in public" && \
-        if [ -d "./public/static" ]; then \
+        if [ -d "frontend-build/build/static" ]; then \
+            echo "static directory found" && \
             echo "Static directory contents:" && \
-            ls -la ./public/static/ && \
-            if [ -d "./public/static/js" ]; then \
-                echo "JS files:" && \
-                ls -la ./public/static/js/ | head -5; \
+            ls -la frontend-build/build/static/ && \
+            if [ -d "frontend-build/build/static/js" ]; then \
+                echo "JS files in build:" && \
+                ls -la frontend-build/build/static/js/ | grep -E '\.js$' | head -10; \
             fi && \
-            if [ -d "./public/static/css" ]; then \
-                echo "CSS files:" && \
-                ls -la ./public/static/css/ | head -5; \
+            if [ -d "frontend-build/build/static/css" ]; then \
+                echo "CSS files in build:" && \
+                ls -la frontend-build/build/static/css/ | grep -E '\.css$' | head -10; \
             fi; \
-        fi; \
-    elif [ -d "frontend/build" ] && [ "$(ls -A frontend/build 2>/dev/null)" ]; then \
-        echo "Copying from frontend/build..." && \
-        echo "Contents of frontend/build:" && \
-        ls -la frontend/build/ && \
-        echo "Checking for static directory..." && \
-        ls -la frontend/build/static/ 2>/dev/null || echo "WARNING: static directory not found in build output" && \
-        cp -r frontend/build/* ./public/ && \
-        echo "Frontend files copied successfully" && \
-        echo "Contents of public directory:" && \
-        ls -la ./public/ && \
-        echo "Checking for static directory in public:" && \
-        ls -la ./public/static/ 2>/dev/null || echo "WARNING: static directory not found in public"; \
+        else \
+            echo "ERROR: static directory not found in build output!" && \
+            exit 1; \
+        fi && \
+        echo "Copying files..." && \
+        cp -r frontend-build/build/* ./public/ && \
+        echo "Verification after copy:" && \
+        echo "index.html exists: $([ -f ./public/index.html ] && echo yes || echo no)" && \
+        echo "static directory exists: $([ -d ./public/static ] && echo yes || echo no)" && \
+        if [ -d "./public/static/js" ]; then \
+            echo "JS files in public:" && \
+            ls -la ./public/static/js/ | grep -E '\.js$' | head -10; \
+        fi && \
+        if [ -d "./public/static/css" ]; then \
+            echo "CSS files in public:" && \
+            ls -la ./public/static/css/ | grep -E '\.css$' | head -10; \
+        fi && \
+        echo "Checking index.html references..." && \
+        grep -oE '/static/[^"]+' ./public/index.html | head -5 || echo "No static references found in index.html"; \
     else \
         echo "ERROR: Frontend build not found!" && \
         echo "frontend-build/build exists: $([ -d frontend-build/build ] && echo yes || echo no)" && \
-        echo "frontend/build exists: $([ -d frontend/build ] && echo yes || echo no)" && \
-        echo "Checking frontend-build directory structure:" && \
+        echo "Checking frontend-build directory:" && \
         ls -la frontend-build/ 2>/dev/null || echo "frontend-build directory does not exist" && \
         exit 1; \
-    fi
+    fi && \
+    echo "=== Frontend build copy completed ==="
 
 # Create necessary directories
 RUN mkdir -p tmp/pids log

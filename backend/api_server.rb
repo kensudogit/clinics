@@ -289,32 +289,14 @@ class ClinicsAPI < Sinatra::Base
   # 注意: このルーティングはエラーハンドラーの前に定義する必要がある
   # Sinatraのルーティングでは、より具体的なパターンが先に評価される
   get %r{^/static/(.+)$} do |path|
-    file_path = File.join(settings.public_folder, 'static', path)
-    STDERR.puts "=" * 50
-    STDERR.puts "Static file requested: #{request.path}"
-    STDERR.puts "Captured path: #{path}"
-    STDERR.puts "File path: #{file_path}"
-    STDERR.puts "File exists: #{File.exist?(file_path)}"
-    STDERR.puts "Is file: #{File.file?(file_path) if File.exist?(file_path)}"
-    STDERR.puts "Public folder: #{settings.public_folder}"
-    STDERR.puts "Public folder exists: #{File.exist?(settings.public_folder)}"
-    if File.exist?(settings.public_folder)
-      STDERR.puts "Public folder contents: #{Dir.entries(settings.public_folder).join(', ')}"
-      static_dir = File.join(settings.public_folder, 'static')
-      STDERR.puts "Static directory exists: #{File.exist?(static_dir)}"
-      if File.exist?(static_dir)
-        STDERR.puts "Static directory contents: #{Dir.entries(static_dir).join(', ')}"
-        # リクエストされたファイルの親ディレクトリも確認
-        requested_dir = File.dirname(file_path)
-        STDERR.puts "Requested file directory: #{requested_dir}"
-        STDERR.puts "Requested file directory exists: #{File.exist?(requested_dir)}"
-        if File.exist?(requested_dir)
-          STDERR.puts "Requested file directory contents: #{Dir.entries(requested_dir).join(', ')}"
-        end
-      end
-    end
-    STDERR.puts "=" * 50
+    # パスを正規化（URLデコードとパストラバーサル対策）
+    safe_path = path.gsub(/\.\./, '').gsub(/[^a-zA-Z0-9._\/-]/, '')
+    file_path = File.join(settings.public_folder, 'static', safe_path)
     
+    # デバッグログ（本番環境でも確認可能）
+    STDERR.puts "[STATIC] Request: #{request.path} -> #{file_path}"
+    
+    # ファイルが存在するか確認
     if File.exist?(file_path) && File.file?(file_path)
       # MIMEタイプを正しく設定
       ext = File.extname(file_path).downcase
@@ -333,12 +315,33 @@ class ClinicsAPI < Sinatra::Base
                    when '.eot' then 'application/vnd.ms-fontobject'
                    else 'application/octet-stream'
                    end
-      STDERR.puts "Serving file with MIME type: #{mime_type}"
       content_type mime_type
       send_file file_path
     else
-      STDERR.puts "ERROR: Static file not found!"
-      # 404エラーを返すが、MIMEタイプは適切に設定する
+      # ファイルが見つからない場合の詳細なデバッグ情報
+      STDERR.puts "[STATIC ERROR] File not found: #{file_path}"
+      STDERR.puts "[STATIC ERROR] Public folder: #{settings.public_folder}"
+      STDERR.puts "[STATIC ERROR] Public folder exists: #{File.exist?(settings.public_folder)}"
+      
+      if File.exist?(settings.public_folder)
+        static_dir = File.join(settings.public_folder, 'static')
+        STDERR.puts "[STATIC ERROR] Static dir exists: #{File.exist?(static_dir)}"
+        if File.exist?(static_dir)
+          STDERR.puts "[STATIC ERROR] Static dir contents: #{Dir.entries(static_dir).join(', ')}"
+          js_dir = File.join(static_dir, 'js')
+          css_dir = File.join(static_dir, 'css')
+          STDERR.puts "[STATIC ERROR] JS dir exists: #{File.exist?(js_dir)}"
+          STDERR.puts "[STATIC ERROR] CSS dir exists: #{File.exist?(css_dir)}"
+          if File.exist?(js_dir)
+            STDERR.puts "[STATIC ERROR] JS files: #{Dir.entries(js_dir).select { |f| f.end_with?('.js') }.join(', ')}"
+          end
+          if File.exist?(css_dir)
+            STDERR.puts "[STATIC ERROR] CSS files: #{Dir.entries(css_dir).select { |f| f.end_with?('.css') }.join(', ')}"
+          end
+        end
+      end
+      
+      # 404エラーを返す
       ext = File.extname(file_path).downcase
       mime_type = case ext
                    when '.js' then 'application/javascript'
@@ -353,14 +356,7 @@ class ClinicsAPI < Sinatra::Base
                    end
       status 404
       content_type mime_type
-      # JSONではなく、適切なMIMEタイプで404を返す
-      # ただし、デバッグ情報はJSONで返す
-      if mime_type == 'application/json'
-        { error: 'Not Found', message: "Static file not found: #{request.path}", debug: { file_path: file_path, exists: File.exist?(file_path) } }.to_json
-      else
-        # JavaScriptやCSSの場合は、空のレスポンスまたはエラーメッセージを返す
-        ''
-      end
+      ''
     end
   end
 
@@ -368,10 +364,16 @@ class ClinicsAPI < Sinatra::Base
   get '/' do
     index_path = File.join(settings.public_folder, 'index.html')
     
+    STDERR.puts "[ROOT] Serving index.html from: #{index_path}"
+    STDERR.puts "[ROOT] Public folder: #{settings.public_folder}"
+    STDERR.puts "[ROOT] Public folder exists: #{File.exist?(settings.public_folder)}"
+    
     if File.exist?(index_path)
+      STDERR.puts "[ROOT] index.html found, serving..."
       content_type 'text/html'
       send_file index_path
     else
+      STDERR.puts "[ROOT] index.html not found at primary path, trying alternatives..."
       # 代替パスを試す
       alt_paths = [
         '/app/public',
@@ -380,13 +382,15 @@ class ClinicsAPI < Sinatra::Base
       ]
       alt_paths.each do |alt|
         alt_index = File.join(alt, 'index.html')
+        STDERR.puts "[ROOT] Checking: #{alt_index} (exists: #{File.exist?(alt_index)})"
         if File.exist?(alt_index)
-          STDERR.puts "Found index.html at alternative path: #{alt_index}"
+          STDERR.puts "[ROOT] Found index.html at alternative path: #{alt_index}"
           content_type 'text/html'
           return send_file alt_index
         end
       end
       
+      STDERR.puts "[ROOT ERROR] index.html not found in any location!"
       status 404
       content_type :json
       { 
@@ -394,7 +398,8 @@ class ClinicsAPI < Sinatra::Base
         message: "Frontend build not found. Index path: #{index_path}",
         public_folder: settings.public_folder,
         public_folder_exists: File.exist?(settings.public_folder),
-        current_dir: Dir.pwd
+        current_dir: Dir.pwd,
+        checked_paths: alt_paths.map { |p| File.join(p, 'index.html') }
       }.to_json
     end
   end
@@ -462,20 +467,20 @@ class ClinicsAPI < Sinatra::Base
   # 注意: Sinatraでは、より具体的なルーティング（/static/*など）が先に評価されるため、
   # このルーティングは/static/*や/manifest.jsonなどにはマッチしないはずです
   get '/*' do
-    STDERR.puts "SPA route (catch-all) requested: #{request.path}"
+    STDERR.puts "[SPA] Catch-all route requested: #{request.path}"
     
     # 念のため、APIパスと静的ファイルパスは既に処理されているはずなので、
     # ここに来ることはないはずですが、ログを出力して確認
     if request.path.start_with?('/api/')
-      STDERR.puts "WARNING: API path reached catch-all route: #{request.path}"
+      STDERR.puts "[SPA WARNING] API path reached catch-all route: #{request.path}"
       status 404
       content_type :json
       return { error: 'Not Found', message: 'The requested resource was not found' }.to_json
     end
     
     if request.path.start_with?('/static/')
-      STDERR.puts "WARNING: Static path reached catch-all route: #{request.path}"
-      STDERR.puts "This should not happen - /static/* route should have caught this"
+      STDERR.puts "[SPA WARNING] Static path reached catch-all route: #{request.path}"
+      STDERR.puts "[SPA WARNING] This should not happen - /static/* route should have caught this"
       status 404
       content_type :json
       return { error: 'Not Found', message: 'Static file route should have handled this' }.to_json
@@ -483,10 +488,12 @@ class ClinicsAPI < Sinatra::Base
     
     # SPA用にindex.htmlを返す
     index_path = File.join(settings.public_folder, 'index.html')
+    STDERR.puts "[SPA] Serving index.html from: #{index_path}"
     if File.exist?(index_path)
       content_type 'text/html'
       send_file index_path
     else
+      STDERR.puts "[SPA ERROR] index.html not found at: #{index_path}"
       status 404
       content_type :json
       { error: 'Not Found', message: "Frontend build not found. Index path: #{index_path}" }.to_json
