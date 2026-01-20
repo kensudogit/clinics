@@ -175,45 +175,32 @@ const DashboardContent = ({ onNavigateToAI }: { onNavigateToAI: () => void }) =>
   return (
     <div className="p-1">
       {/* ヒーローセクション - 斬新的デザイン */}
-      <div className="clinics-hero rounded-3xl p-3 mb-4 clinics-fade-in relative">
-        <div className="flex items-center justify-between relative z-10">
-          <div className="space-y-3">
-            <div className="space-y-2">
-              {/* メインタイトル */}
-                <h4 className="text-2xl font-bold text-white mb-2 leading-tight">
-                <span className="block">今日から、</span>
-                <span className="block bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
-                  CLINICSで！
-                </span>
-              </h4>
-              {/* サブタイトル */}
-              <p className="text-white text-base opacity-90 leading-relaxed">
-                14万人の医療従事者が使っている<br />
-                <span className="font-semibold">次世代業務効率化ソリューション</span>
-              </p>
-            </div>
-            {/* アクションボタン */}
-            <div className="flex space-x-3">
-              <button className="clinics-button-primary text-sm py-2 px-4">
-                今すぐ始める
-              </button>
-              <button 
-                onClick={onNavigateToAI}
-                className="clinics-button-secondary text-sm py-2 px-4"
-              >
-                デモを見る
-              </button>
-            </div>
+      <div className="clinics-hero rounded-3xl p-4 mb-4 clinics-fade-in relative">
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-2">
+            {/* メインタイトル */}
+            <h4 className="text-2xl font-bold text-white leading-tight">
+              <span className="inline">今日から、</span>
+              <span className="inline bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent ml-1">
+                CLINICSで！
+              </span>
+            </h4>
           </div>
-          {/* ロゴ表示（大画面のみ） */}
-          <div className="hidden lg:block">
-            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm animate-float">
-              <img 
-                src={logoImage} 
-                alt="CLINICS Logo" 
-                className="w-16 h-16 object-cover hover:scale-110 transition-transform duration-300 shadow-lg rounded-full"
-              />
-            </div>
+          {/* サブタイトル */}
+          <p className="text-white text-sm opacity-90 leading-snug mb-3">
+            14万人の医療従事者が使っている <span className="font-semibold">次世代業務効率化ソリューション</span>
+          </p>
+          {/* アクションボタン */}
+          <div className="flex space-x-3">
+            <button className="clinics-button-primary text-sm py-1.5 px-4">
+              今すぐ始める
+            </button>
+            <button 
+              onClick={onNavigateToAI}
+              className="clinics-button-secondary text-sm py-1.5 px-4"
+            >
+              デモを見る
+            </button>
           </div>
         </div>
         
