@@ -170,7 +170,7 @@ class ClinicsAPI < Sinatra::Base
     ].to_json
   end
 
-  # オンライン診療
+  # オンライン診療一覧
   get '/api/v1/consultations' do
     content_type :json
     [
@@ -185,6 +185,97 @@ class ClinicsAPI < Sinatra::Base
         prescription: '解熱剤'
       }
     ].to_json
+  end
+
+  # オンライン診療の詳細取得
+  get '/api/v1/clinics/:clinic_id/online_consultations/:consultation_id' do |clinic_id, consultation_id|
+    content_type :json
+    {
+      id: consultation_id,
+      clinic_id: clinic_id,
+      consultation_type: 'video',
+      scheduled_at: '2024-01-20T14:00:00Z',
+      status: 'scheduled',
+      patient: {
+        id: 1,
+        name: '山田 花子',
+        role: 'patient'
+      },
+      doctor: {
+        id: 1,
+        name: '田中 太郎',
+        role: 'doctor'
+      },
+      consultation_notes: '',
+      diagnosis: '',
+      treatment_plan: ''
+    }.to_json
+  end
+
+  # オンライン診療の開始
+  post '/api/v1/clinics/:clinic_id/online_consultations/:consultation_id/start' do |clinic_id, consultation_id|
+    content_type :json
+    STDERR.puts "[CONSULTATION] Starting consultation: #{consultation_id} for clinic: #{clinic_id}"
+    {
+      id: consultation_id,
+      clinic_id: clinic_id,
+      status: 'in_progress',
+      started_at: Time.now.iso8601,
+      message: '診療を開始しました'
+    }.to_json
+  end
+
+  # オンライン診療の終了
+  post '/api/v1/clinics/:clinic_id/online_consultations/:consultation_id/end' do |clinic_id, consultation_id|
+    content_type :json
+    request_data = JSON.parse(request.body.read) rescue {}
+    notes = request_data['notes'] || ''
+    
+    STDERR.puts "[CONSULTATION] Ending consultation: #{consultation_id} for clinic: #{clinic_id}"
+    STDERR.puts "[CONSULTATION] Notes: #{notes}"
+    
+    {
+      id: consultation_id,
+      clinic_id: clinic_id,
+      status: 'completed',
+      ended_at: Time.now.iso8601,
+      notes: notes,
+      message: '診療を終了しました'
+    }.to_json
+  end
+
+  # バイタルサインの記録
+  post '/api/v1/clinics/:clinic_id/online_consultations/:consultation_id/vital_signs' do |clinic_id, consultation_id|
+    content_type :json
+    request_data = JSON.parse(request.body.read) rescue {}
+    
+    STDERR.puts "[CONSULTATION] Recording vital signs for consultation: #{consultation_id}"
+    STDERR.puts "[CONSULTATION] Vital signs: #{request_data.inspect}"
+    
+    {
+      id: "vital_#{Time.now.to_i}",
+      consultation_id: consultation_id,
+      vital_signs: request_data,
+      recorded_at: Time.now.iso8601,
+      message: 'バイタルサインを記録しました'
+    }.to_json
+  end
+
+  # 処方箋の追加
+  post '/api/v1/clinics/:clinic_id/online_consultations/:consultation_id/prescriptions' do |clinic_id, consultation_id|
+    content_type :json
+    request_data = JSON.parse(request.body.read) rescue {}
+    
+    STDERR.puts "[CONSULTATION] Adding prescription for consultation: #{consultation_id}"
+    STDERR.puts "[CONSULTATION] Prescription: #{request_data.inspect}"
+    
+    {
+      id: "prescription_#{Time.now.to_i}",
+      consultation_id: consultation_id,
+      prescription: request_data,
+      prescribed_at: Time.now.iso8601,
+      message: '処方箋を追加しました'
+    }.to_json
   end
 
   # 電子カルテ

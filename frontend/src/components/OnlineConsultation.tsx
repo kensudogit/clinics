@@ -74,6 +74,12 @@ export const OnlineConsultation: React.FC<OnlineConsultationProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const queryClient = useQueryClient();
+  
+  // WebRTC関連のref
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
 
   // サンプル動画データの初期化
   useEffect(() => {
@@ -157,6 +163,22 @@ export const OnlineConsultation: React.FC<OnlineConsultationProps> = ({
     if (consultationStatus === 'in_progress') {
       initializeWebRTC();
     }
+    
+    // クリーンアップ関数
+    return () => {
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (remoteStreamRef.current) {
+        remoteStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+      }
+    };
   }, [consultationStatus]);
 
   // ローカルストレージからデータを読み込み
@@ -191,42 +213,245 @@ export const OnlineConsultation: React.FC<OnlineConsultationProps> = ({
 
   const initializeWebRTC = async () => {
     try {
+      // ローカルストリームの取得
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { width: 1280, height: 720 },
         audio: true
       });
       
+      localStreamRef.current = stream;
+      
+      // ローカルビデオにストリームを設定
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
+        localVideoRef.current.muted = true; // エコー防止のためミュート
       }
       
-      // WebRTC接続の確立（実際の実装ではシグナリングサーバーを使用）
-      // ここでは簡略化
+      // RTCPeerConnectionの作成
+      const configuration = {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      };
+      
+      const peerConnection = new RTCPeerConnection(configuration);
+      peerConnectionRef.current = peerConnection;
+      
+      // ローカルストリームのトラックを追加
+      stream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, stream);
+      });
+      
+      // リモートストリームの処理
+      peerConnection.ontrack = (event) => {
+        const remoteStream = event.streams[0];
+        remoteStreamRef.current = remoteStream;
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = remoteStream;
+        }
+      };
+      
+      // ICE候補の処理（実際の実装ではシグナリングサーバーに送信）
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          // 実際の実装では、シグナリングサーバー経由で相手に送信
+          console.log('ICE candidate:', event.candidate);
+        }
+      };
+      
+      // 接続状態の監視
+      peerConnection.onconnectionstatechange = () => {
+        console.log('Connection state:', peerConnection.connectionState);
+        if (peerConnection.connectionState === 'failed') {
+          console.error('WebRTC接続に失敗しました');
+        }
+      };
+      
+      // 簡易的なP2P接続のシミュレーション
+      // 実際の実装では、シグナリングサーバー（WebSocket）を使用して
+      // オファー/アンサーを交換する必要があります
+      if (userRole === 'doctor') {
+        // 医師側：オファーを作成
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        
+        // 実際の実装では、ここでシグナリングサーバーに送信
+        // ここでは簡易的に、同じページ内でシミュレーション
+        setTimeout(() => {
+          simulateRemoteConnection(offer);
+        }, 1000);
+      }
+      
     } catch (error) {
       console.error('WebRTC初期化エラー:', error);
+      alert('カメラとマイクへのアクセス許可が必要です。ブラウザの設定を確認してください。');
+    }
+  };
+  
+  // 簡易的なリモート接続のシミュレーション
+  // 実際の実装では、シグナリングサーバー経由で実装
+  const simulateRemoteConnection = async (offer: RTCSessionDescriptionInit) => {
+    if (!peerConnectionRef.current) return;
+    
+    try {
+      // リモート側のストリームをシミュレーション
+      // 実際の実装では、別のユーザーからのオファー/アンサーを受信
+      const remoteStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 },
+        audio: true
+      });
+      
+      // リモートストリームをメインビデオに設定
+      if (videoRef.current) {
+        videoRef.current.srcObject = remoteStream;
+      }
+      
+      // 実際の実装では、シグナリングサーバー経由でアンサーを受信して
+      // setRemoteDescription を呼び出す
+      // ここでは簡易的に、ローカルで処理
+      await peerConnectionRef.current.setRemoteDescription(offer);
+      const answer = await peerConnectionRef.current.createAnswer();
+      await peerConnectionRef.current.setLocalDescription(answer);
+      
+    } catch (error) {
+      console.error('リモート接続シミュレーションエラー:', error);
     }
   };
 
   const toggleVideo = () => {
-    setIsVideoOn(!isVideoOn);
-    // 実際の実装ではWebRTCのトラックを制御
+    const newState = !isVideoOn;
+    setIsVideoOn(newState);
+    
+    // ローカルストリームのビデオトラックを制御
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = newState;
+      }
+    }
+    
+    // リモートストリームのビデオトラックも制御（実際の実装ではシグナリング経由）
+    if (remoteStreamRef.current) {
+      const videoTrack = remoteStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = newState;
+      }
+    }
   };
 
   const toggleAudio = () => {
-    setIsAudioOn(!isAudioOn);
-    // 実際の実装ではWebRTCのトラックを制御
+    const newState = !isAudioOn;
+    setIsAudioOn(newState);
+    
+    // ローカルストリームのオーディオトラックを制御
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = newState;
+      }
+    }
+    
+    // リモートストリームのオーディオトラックも制御（実際の実装ではシグナリング経由）
+    if (remoteStreamRef.current) {
+      const audioTrack = remoteStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = newState;
+      }
+    }
   };
 
-  const toggleScreenShare = () => {
-    setIsScreenSharing(!isScreenSharing);
-    // 画面共有の実装
+  const toggleScreenShare = async () => {
+    try {
+      if (!isScreenSharing) {
+        // 画面共有を開始
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true
+        });
+        
+        screenStreamRef.current = screenStream;
+        
+        // メインビデオに画面共有ストリームを設定
+        if (videoRef.current) {
+          videoRef.current.srcObject = screenStream;
+        }
+        
+        // 画面共有終了時の処理
+        screenStream.getVideoTracks()[0].onended = () => {
+          setIsScreenSharing(false);
+          if (localStreamRef.current && videoRef.current) {
+            videoRef.current.srcObject = localStreamRef.current;
+          }
+        };
+        
+        setIsScreenSharing(true);
+      } else {
+        // 画面共有を停止
+        if (screenStreamRef.current) {
+          screenStreamRef.current.getTracks().forEach(track => track.stop());
+          screenStreamRef.current = null;
+        }
+        
+        // メインビデオをローカルストリームに戻す
+        if (localStreamRef.current && videoRef.current) {
+          videoRef.current.srcObject = localStreamRef.current;
+        }
+        
+        setIsScreenSharing(false);
+      }
+    } catch (error) {
+      console.error('画面共有エラー:', error);
+      alert('画面共有を開始できませんでした。');
+    }
   };
 
-  const startConsultation = () => {
-    startConsultationMutation.mutate();
+  const startConsultation = async () => {
+    try {
+      // ビデオストリームの初期化
+      await initializeWebRTC();
+      
+      // APIに診療開始を通知
+      startConsultationMutation.mutate();
+    } catch (error) {
+      console.error('診療開始エラー:', error);
+      alert('診療を開始できませんでした。カメラとマイクへのアクセス許可を確認してください。');
+    }
   };
 
   const endConsultation = () => {
+    // ストリームの停止
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+    
+    if (remoteStreamRef.current) {
+      remoteStreamRef.current.getTracks().forEach(track => track.stop());
+      remoteStreamRef.current = null;
+    }
+    
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(track => track.stop());
+      screenStreamRef.current = null;
+    }
+    
+    // PeerConnectionの終了
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    
+    // ビデオ要素のクリア
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
     const notes = prompt('診療記録を入力してください:');
     if (notes) {
       endConsultationMutation.mutate(notes);
