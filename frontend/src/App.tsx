@@ -175,31 +175,31 @@ const DashboardContent = ({ onNavigateToAI }: { onNavigateToAI: () => void }) =>
   return (
     <div className="p-1">
       {/* ヒーローセクション - 斬新的デザイン */}
-      <div className="clinics-hero rounded-3xl p-4 mb-6 clinics-fade-in relative">
+      <div className="clinics-hero rounded-3xl p-3 mb-4 clinics-fade-in relative">
         <div className="flex items-center justify-between relative z-10">
-          <div className="space-y-6">
-            <div className="space-y-4">
+          <div className="space-y-3">
+            <div className="space-y-2">
               {/* メインタイトル */}
-                <h4 className="text-3xl font-bold text-white mb-4 leading-tight">
+                <h4 className="text-2xl font-bold text-white mb-2 leading-tight">
                 <span className="block">今日から、</span>
                 <span className="block bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
                   CLINICSで！
                 </span>
               </h4>
               {/* サブタイトル */}
-              <p className="text-white text-lg opacity-90 leading-relaxed">
+              <p className="text-white text-base opacity-90 leading-relaxed">
                 14万人の医療従事者が使っている<br />
                 <span className="font-semibold">次世代業務効率化ソリューション</span>
               </p>
             </div>
             {/* アクションボタン */}
-            <div className="flex space-x-4">
-              <button className="clinics-button-primary">
+            <div className="flex space-x-3">
+              <button className="clinics-button-primary text-sm py-2 px-4">
                 今すぐ始める
               </button>
               <button 
                 onClick={onNavigateToAI}
-                className="clinics-button-secondary"
+                className="clinics-button-secondary text-sm py-2 px-4"
               >
                 デモを見る
               </button>
@@ -207,19 +207,19 @@ const DashboardContent = ({ onNavigateToAI }: { onNavigateToAI: () => void }) =>
           </div>
           {/* ロゴ表示（大画面のみ） */}
           <div className="hidden lg:block">
-            <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm animate-float">
+            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm animate-float">
               <img 
                 src={logoImage} 
                 alt="CLINICS Logo" 
-                className="w-20 h-20 object-cover hover:scale-110 transition-transform duration-300 shadow-lg rounded-full"
+                className="w-16 h-16 object-cover hover:scale-110 transition-transform duration-300 shadow-lg rounded-full"
               />
             </div>
           </div>
         </div>
         
         {/* 装飾的な要素 */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-white to-transparent opacity-10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-400 to-transparent opacity-20 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-white to-transparent opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-36 h-36 bg-gradient-to-tr from-cyan-400 to-transparent opacity-20 rounded-full blur-2xl"></div>
       </div>
 
       {/* 統計カード - 斬新的デザイン */}
